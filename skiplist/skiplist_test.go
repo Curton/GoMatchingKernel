@@ -230,3 +230,28 @@ func BenchmarkDecGet(b *testing.B) {
 
 	b.SetBytes(int64(b.N))
 }
+
+func TestOrder(t *testing.T) {
+	l := New()
+	l.Set(2, "middle")
+	l.Set(3, "last")
+	l.Set(1, "first")
+	fmt.Println(l.Front().value)
+	l.Remove(l.Front().key)
+	fmt.Println(l.Front().value)
+	l.Remove(l.Front().key)
+	fmt.Println(l.Front().value)
+}
+
+func TestOrder2(t *testing.T) {
+	l := New()
+	l.Set(-2, "middle")
+	l.Set(-3, "last")
+	l.Set(-1, "first")
+
+	for b := l.Front(); b != nil; b = b.Next() {
+		fmt.Println(b.value)
+		l.Remove(b.key)
+	}
+	fmt.Println(l.Length)
+}
