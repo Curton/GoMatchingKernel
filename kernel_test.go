@@ -13,10 +13,11 @@ import (
 
 func Test_insertPriceCheckedOrder1(t *testing.T) {
 	// insert ask order to empty ask
+	nano := time.Now().UnixNano()
 	order := types.KernelOrder{
 		KernelOrderID: 0,
-		CreateTime:    time.Now().UnixNano(),
-		UpdateTime:    0,
+		CreateTime:    nano,
+		UpdateTime:    nano,
 		Amount:        -10,
 		Price:         100,
 		Left:          -10,

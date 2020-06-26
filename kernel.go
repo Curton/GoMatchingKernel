@@ -117,7 +117,7 @@ func matchingAskOrder(order *types.KernelOrder) *matchingInfo {
 
 // after price checked, size > 0
 func matchingBidOrder(order *types.KernelOrder) *matchingInfo {
-
+	return nil
 }
 
 func takeSnapshot() {
