@@ -1,4 +1,4 @@
-package skiplist
+package exchangeKernel
 
 import (
 	"math"
@@ -56,7 +56,7 @@ func (list *SkipList) Get(key float64) *Element {
 	list.mutex.Lock()
 	defer list.mutex.Unlock()
 
-	var prev *elementNode = &list.elementNode
+	var prev = &list.elementNode
 	var next *Element
 
 	for i := list.maxLevel - 1; i >= 0; i-- {
@@ -101,7 +101,7 @@ func (list *SkipList) Remove(key float64) *Element {
 // caches them. This approach is similar to a "search finger" as described by Pugh:
 // http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.17.524
 func (list *SkipList) getPrevElementNodes(key float64) []*elementNode {
-	var prev *elementNode = &list.elementNode
+	var prev = &list.elementNode
 	var next *Element
 
 	prevs := list.prevNodesCache

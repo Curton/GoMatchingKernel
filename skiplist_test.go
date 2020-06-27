@@ -1,4 +1,4 @@
-package skiplist
+package exchangeKernel
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 )
 
 var benchList *SkipList
-var discard *Element
 
 func init() {
 	// Initialize a big SkipList for the Get() benchmark

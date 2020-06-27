@@ -1,4 +1,4 @@
-package skiplist
+package exchangeKernel
 
 import (
 	"math/rand"

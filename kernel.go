@@ -10,7 +10,6 @@ package exchangeKernel
 
 import (
 	"container/list"
-	"exchangeKernel/skiplist"
 	"exchangeKernel/types"
 	"math"
 	"sync"
@@ -18,8 +17,8 @@ import (
 )
 
 var (
-	ask                    = skiplist.New() // thread safe
-	bid                    = skiplist.New() // thread safe
+	ask                    = New() // thread safe
+	bid                    = New() // thread safe
 	ask1Price        int64 = math.MaxInt64
 	bid1Price        int64 = math.MinInt64
 	matchingInfoChan       = make(chan *matchingInfo, 1000)
@@ -128,8 +127,8 @@ func matchingAskOrder(order *types.KernelOrder) {
 	Loop:
 		for b := bid.Front(); b != nil; b = b.Next() {
 			bucket := b.Value().(*priceBucket)
-			// check price
 			o := bucket.l.Front().Value.(*types.KernelOrder)
+			// check price
 			if o.Price < order.Price {
 				break Loop
 			}
@@ -165,7 +164,7 @@ func matchingAskOrder(order *types.KernelOrder) {
 						// 吃了完了还有剩余
 						order.Left = 0
 
-						matchedOrder.FilledTotal = matchedOrder.Amount * matchedOrder.Price
+						matchedOrder.FilledTotal = -order.Left * matchedOrder.Price
 						matchedOrder.Left += order.Left
 						matchedOrder.UpdateTime = time.Now().UnixNano()
 						makerOrders = append(makerOrders, matchedOrder)
