@@ -255,3 +255,15 @@ func TestOrder2(t *testing.T) {
 	}
 	fmt.Println(l.Length)
 }
+
+func TestOrder3(t *testing.T) {
+	l := New()
+	for i := 0; i < 10000; i++ {
+		l.Set(float64(i), 10000-i)
+	}
+	for b := l.Front(); b != nil; b = b.Next() {
+		fmt.Println(b.value)
+		//l.Remove(b.key)
+	}
+	fmt.Println(l.Length)
+}
