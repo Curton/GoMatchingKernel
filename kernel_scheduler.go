@@ -15,6 +15,7 @@ var (
 )
 
 // run in go routine
+// 再次判断 限价单 与 市价单
 func newOrderAcceptor() {
 	for kernelOrder := range orderChan {
 		if kernelOrder.Type == types.LIMIT {
@@ -25,7 +26,7 @@ func newOrderAcceptor() {
 					// 不能成交,直接插入
 					insertCheckedOrder(kernelOrder)
 				} else {
-					matchingBidOrder(kernelOrder)
+					matchingOrder(ask, kernelOrder, false)
 				}
 			} else {
 				// ask order
@@ -33,7 +34,7 @@ func newOrderAcceptor() {
 					// 不能成交,直接插入
 					insertCheckedOrder(kernelOrder)
 				} else {
-					matchingAskOrder(kernelOrder)
+					matchingOrder(bid, kernelOrder, true)
 				}
 			}
 		} else if kernelOrder.Type == types.MARKET {

@@ -32,9 +32,10 @@ type matchingInfo struct {
 }
 
 // new order at the head of the list, old order at the tail of the list
+// a.k.a price level
 type priceBucket struct {
 	l    list.List
-	size int64
+	Left int64
 }
 
 type orderBook struct {
@@ -63,14 +64,14 @@ func insertCheckedOrder(order *types.KernelOrder) bool {
 		if get != nil {
 			bucket := get.Value().(*priceBucket)
 			bucket.l.PushFront(order)
-			bucket.size += order.Left
+			bucket.Left += order.Left
 			return true
 		} else {
 			l := list.List{}
 			l.PushFront(order)
 			ask.Set(float64(order.Price), &priceBucket{
 				l:    l,
-				size: order.Left,
+				Left: order.Left,
 			})
 			// DCL
 			if ask1Price == math.MaxInt64 {
@@ -89,14 +90,14 @@ func insertCheckedOrder(order *types.KernelOrder) bool {
 		if get != nil {
 			bucket := get.Value().(*priceBucket)
 			bucket.l.PushFront(order)
-			bucket.size += order.Left
+			bucket.Left += order.Left
 			return true
 		} else {
 			l := list.List{}
 			l.PushFront(order)
 			bid.Set(float64(-order.Price), &priceBucket{
 				l:    l,
-				size: order.Left,
+				Left: order.Left,
 			})
 			// DCL
 			if bid1Price == math.MinInt64 {
@@ -111,52 +112,63 @@ func insertCheckedOrder(order *types.KernelOrder) bool {
 			return true
 		}
 	}
-
-	//// first ask order
-	//if order.Amount < 0 {
-	//	l := list.List{}
-	//	l.PushFront(order)
-	//	ask.Set(float64(order.Price), &priceBucket{
-	//		l:    l,
-	//		size: order.Left,
-	//	})
-	//	ask1Price = order.Price
-	//	return true
-	//}
-	//
-	//// first bid order
-	//if order.Amount > 0 {
-	//	l := list.List{}
-	//	l.PushFront(order)
-	//	bid.Set(float64(-order.Price), &priceBucket{
-	//		l:    l,
-	//		size: order.Left,
-	//	})
-	//	bid1Price = order.Price
-	//	return true
-	//}
-	return false
 }
 
-// after price checked, size < 0, 撮合卖单, 匹配对应买单
-func matchingAskOrder(order *types.KernelOrder) {
+// clear a price level/bucket
+func clearBucket(bucket *priceBucket, order *types.KernelOrder, wg *sync.WaitGroup) {
+	defer wg.Done()
+	if order.Left == 0 {
+		order.Status = types.CLOSED
+	}
+	matchingInfo := &matchingInfo{
+		makerOrders: nil,
+		takerOrder:  *order,
+	}
+	makerOrders := make([]types.KernelOrder, 0, bucket.l.Len())
+	element := bucket.l.Back()
+	for v := element; v != nil; v = v.Prev() {
+		matchedOrder := v.Value.(*types.KernelOrder)
+		matchedOrder.FilledTotal = matchedOrder.Amount * matchedOrder.Price
+		matchedOrder.Left = 0
+		matchedOrder.Status = types.CLOSED
+		matchedOrder.UpdateTime = time.Now().UnixNano()
+		makerOrders = append(makerOrders, *matchedOrder)
+	}
+	matchingInfo.makerOrders = makerOrders
+	order.UpdateTime = time.Now().UnixNano()
+	// remove bucket
+	price := element.Value.(*types.KernelOrder).Price
+	if order.Amount < 0 {
+		bid.Remove(float64(-price))
+	} else {
+		ask.Remove(float64(price))
+	}
+	// send matched
+	matchingInfoChan <- matchingInfo
+}
+
+// run in single thread,  需确证可撮合的订单进入
+func matchingOrder(side *SkipList, order *types.KernelOrder, isAsk bool) {
 	wg := sync.WaitGroup{}
 
 	// GTC order
 	if order.TimeInForce == types.GTC {
 	Loop:
-		for b := bid.Front(); b != nil; b = b.Next() {
+		for b := side.Front(); b != nil; b = b.Next() {
 			bucket := b.Value().(*priceBucket)
 			bucketListHead := bucket.l.Front().Value.(*types.KernelOrder)
 			// check price
-			if bucketListHead.Price < order.Price {
+
+			if isAsk && bucketListHead.Price < order.Price {
+				break Loop
+			} else if !isAsk && bucketListHead.Price > order.Price {
 				break Loop
 			}
 			// check whether enough amount of order in a bucket
-			if bucket.size <= -order.Amount {
+			if (isAsk && bucket.Left <= -order.Left) || (!isAsk && bucket.Left >= -order.Left) {
 				// 可异步清空价价格篮子
-				order.Left += bucket.size
-				order.FilledTotal -= bucket.size * bucketListHead.Price
+				order.Left += bucket.Left
+				order.FilledTotal -= bucket.Left * bucketListHead.Price
 				wg.Add(1)
 				go clearBucket(bucket, order, &wg)
 			} else {
@@ -173,7 +185,7 @@ func matchingAskOrder(order *types.KernelOrder) {
 				for v := bucket.l.Back(); v != nil; v = v.Prev() {
 					matchedOrder := v.Value.(*types.KernelOrder)
 					unixNano := time.Now().UnixNano()
-					if matchedOrder.Left <= -order.Left {
+					if (isAsk && matchedOrder.Left <= -order.Left) || (!isAsk && matchedOrder.Left >= -order.Left) {
 						// 全部吃完
 						order.Left += matchedOrder.Left
 
@@ -214,53 +226,20 @@ func matchingAskOrder(order *types.KernelOrder) {
 	// 等待异步处理完成
 	wg.Wait()
 	// 必须等待异步处理完成后, 更新卖一价格
-	if bid.Length != 0 {
-		bucket := bid.Front().value.(*priceBucket)
-		price := bucket.l.Front().Value.(*types.KernelOrder).Price
-		bid1Price = price
+	if side.Length != 0 {
+		bucket := side.Front().value.(*priceBucket)
+		kernelOrder := bucket.l.Front().Value.(*types.KernelOrder)
+		price := kernelOrder.Price
+		if isAsk {
+			bid1Price = price
+		} else {
+			ask1Price = price
+		}
 	} else {
-		bid1Price = math.MinInt64
+		if isAsk {
+			bid1Price = math.MinInt64
+		} else {
+			ask1Price = math.MaxInt64
+		}
 	}
-}
-
-func clearBucket(bucket *priceBucket, order *types.KernelOrder, wg *sync.WaitGroup) {
-	defer wg.Done()
-	if order.Left == 0 {
-		order.Status = types.CLOSED
-	}
-	matchingInfo := &matchingInfo{
-		makerOrders: nil,
-		takerOrder:  *order,
-	}
-	makerOrders := make([]types.KernelOrder, 0, bucket.l.Len())
-	element := bucket.l.Back()
-	for v := element; v != nil; v = v.Prev() {
-		matchedOrder := v.Value.(*types.KernelOrder)
-		matchedOrder.FilledTotal = matchedOrder.Amount * matchedOrder.Price
-		matchedOrder.Left = 0
-		matchedOrder.Status = types.CLOSED
-		matchedOrder.UpdateTime = time.Now().UnixNano()
-		makerOrders = append(makerOrders, *matchedOrder)
-	}
-	matchingInfo.makerOrders = makerOrders
-	order.UpdateTime = time.Now().UnixNano()
-	// remove bucket
-	price := element.Value.(*types.KernelOrder).Price
-	if order.Amount < 0 {
-		bid.Remove(float64(-price))
-	} else {
-		ask.Remove(float64(price))
-	}
-	// send matched
-	matchingInfoChan <- matchingInfo
-}
-
-// after price checked, size > 0, 撮合买单, 匹配对应卖单
-func matchingBidOrder(order *types.KernelOrder) *matchingInfo {
-	return nil
-}
-
-func takeSnapshot() {
-	// will block ask & bid list
-	// should not call frequently
 }
