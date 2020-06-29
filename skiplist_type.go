@@ -27,8 +27,8 @@ func (e *Element) Value() interface{} {
 
 // Next returns the following Element or nil if we're at the end of the list.
 // Only operates on the bottom level of the skip list (a fully linked list).
-func (element *Element) Next() *Element {
-	return element.next[0]
+func (e *Element) Next() *Element {
+	return e.next[0]
 }
 
 type SkipList struct {

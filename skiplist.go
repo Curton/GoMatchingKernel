@@ -104,7 +104,7 @@ func (list *SkipList) getPrevElementNodes(key float64) []*elementNode {
 	var prev = &list.elementNode
 	var next *Element
 
-	prevs := list.prevNodesCache
+	prevNodesCache := list.prevNodesCache
 
 	for i := list.maxLevel - 1; i >= 0; i-- {
 		next = prev.next[i]
@@ -114,10 +114,10 @@ func (list *SkipList) getPrevElementNodes(key float64) []*elementNode {
 			next = next.next[i]
 		}
 
-		prevs[i] = prev
+		prevNodesCache[i] = prev
 	}
 
-	return prevs
+	return prevNodesCache
 }
 
 // SetProbability changes the current P value of the list.
