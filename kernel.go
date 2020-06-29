@@ -21,7 +21,7 @@ var (
 	bid                    = New() // Thread-Safe skip-list
 	ask1Price        int64 = math.MaxInt64
 	bid1Price        int64 = math.MinInt64
-	matchingInfoChan       = make(chan *matchingInfo, 1000)
+	matchingInfoChan       = make(chan *matchingInfo, 100)
 	ask1PriceMux           = sync.Mutex{}
 	bid1PriceMux           = sync.Mutex{}
 )
@@ -73,12 +73,18 @@ func insertCheckedOrder(order *types.KernelOrder) bool {
 				l:    l,
 				Left: order.Left,
 			})
-			// DCL
+			// DCL 减少锁开销
 			if ask1Price == math.MaxInt64 {
 				ask1PriceMux.Lock()
 				if ask1Price == math.MaxInt64 {
 					ask1Price = order.Price
 				} else if ask1Price > order.Price {
+					ask1Price = order.Price
+				}
+				ask1PriceMux.Unlock()
+			} else if ask1Price > order.Price {
+				ask1PriceMux.Lock()
+				if ask1Price > order.Price {
 					ask1Price = order.Price
 				}
 				ask1PriceMux.Unlock()
@@ -99,12 +105,18 @@ func insertCheckedOrder(order *types.KernelOrder) bool {
 				l:    l,
 				Left: order.Left,
 			})
-			// DCL
+			// DCL 减少锁开销
 			if bid1Price == math.MinInt64 {
 				bid1PriceMux.Lock()
 				if bid1Price == math.MinInt64 {
 					bid1Price = order.Price
 				} else if bid1Price < order.Price {
+					bid1Price = order.Price
+				}
+				bid1PriceMux.Unlock()
+			} else if bid1Price < order.Price {
+				bid1PriceMux.Lock()
+				if bid1Price < order.Price {
 					bid1Price = order.Price
 				}
 				bid1PriceMux.Unlock()
@@ -115,14 +127,15 @@ func insertCheckedOrder(order *types.KernelOrder) bool {
 }
 
 // clear a price level/bucket
-func clearBucket(bucket *priceBucket, order *types.KernelOrder, wg *sync.WaitGroup) {
+func clearBucket(bucket *priceBucket, order types.KernelOrder, wg *sync.WaitGroup) {
 	defer wg.Done()
 	if order.Left == 0 {
 		order.Status = types.CLOSED
 	}
+	order.UpdateTime = time.Now().UnixNano()
 	matchingInfo := &matchingInfo{
 		makerOrders: nil,
-		takerOrder:  *order,
+		takerOrder:  order,
 	}
 	makerOrders := make([]types.KernelOrder, 0, bucket.l.Len())
 	element := bucket.l.Back()
@@ -131,11 +144,11 @@ func clearBucket(bucket *priceBucket, order *types.KernelOrder, wg *sync.WaitGro
 		matchedOrder.FilledTotal = matchedOrder.Amount * matchedOrder.Price
 		matchedOrder.Left = 0
 		matchedOrder.Status = types.CLOSED
-		matchedOrder.UpdateTime = time.Now().UnixNano()
+		matchedOrder.UpdateTime = order.UpdateTime
 		makerOrders = append(makerOrders, *matchedOrder)
 	}
 	matchingInfo.makerOrders = makerOrders
-	order.UpdateTime = time.Now().UnixNano()
+
 	// remove bucket
 	price := element.Value.(*types.KernelOrder).Price
 	if order.Amount < 0 {
@@ -170,18 +183,16 @@ func matchingOrder(side *SkipList, order *types.KernelOrder, isAsk bool) {
 				order.Left += bucket.Left
 				order.FilledTotal -= bucket.Left * bucketListHead.Price
 				wg.Add(1)
-				go clearBucket(bucket, order, &wg)
-			} else {
+				go clearBucket(bucket, *order, &wg)
+			} else { // 匹配剩余订单
 				if order.Left == 0 {
 					//order.Status = types.CLOSED
 					break Loop
 				}
-				// 匹配剩余订单
 				matchingInfo := &matchingInfo{
-					makerOrders: nil, // avoid reallocate
-					takerOrder:  *order,
+					makerOrders: nil,
 				}
-				makerOrders := make([]*types.KernelOrder, 0, bucket.l.Len())
+				makerOrders := make([]types.KernelOrder, 0, bucket.l.Len())
 				for v := bucket.l.Back(); v != nil; v = v.Prev() {
 					matchedOrder := v.Value.(*types.KernelOrder)
 					unixNano := time.Now().UnixNano()
@@ -193,21 +204,23 @@ func matchingOrder(side *SkipList, order *types.KernelOrder, isAsk bool) {
 						matchedOrder.Left = 0
 						matchedOrder.Status = types.CLOSED
 						matchedOrder.UpdateTime = unixNano
-						makerOrders = append(makerOrders, matchedOrder)
+						makerOrders = append(makerOrders, *matchedOrder)
 
 						bucket.l.Remove(v)
 					} else {
 						// 吃了完了还有剩余
-						order.Left = 0
 
 						matchedOrder.FilledTotal = -order.Left * matchedOrder.Price
 						matchedOrder.Left += order.Left
+						order.Left = 0
 						matchedOrder.UpdateTime = unixNano
-						makerOrders = append(makerOrders, matchedOrder)
+						makerOrders = append(makerOrders, *matchedOrder)
 					}
 					if order.Left == 0 {
 						order.UpdateTime = unixNano
 						order.Status = types.CLOSED
+						matchingInfo.takerOrder = *order
+						matchingInfo.makerOrders = makerOrders
 						// send matched
 						matchingInfoChan <- matchingInfo
 						break Loop
@@ -225,7 +238,7 @@ func matchingOrder(side *SkipList, order *types.KernelOrder, isAsk bool) {
 
 	// 等待异步处理完成
 	wg.Wait()
-	// 必须等待异步处理完成后, 更新卖一价格
+	// 必须等待异步处理完成后, 更新买一/卖一价格
 	if side.Length != 0 {
 		bucket := side.Front().value.(*priceBucket)
 		kernelOrder := bucket.l.Front().Value.(*types.KernelOrder)
