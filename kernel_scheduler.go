@@ -15,7 +15,7 @@ var (
 )
 
 // run in go routine
-// 再次判断 限价单 与 市价单
+// 判断 限价单 与 市价单
 func orderAcceptor() {
 	for kernelOrder := range orderChan {
 		if kernelOrder.Type == types.LIMIT {
