@@ -890,7 +890,7 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 
 // 1_000_000个随机订单, 500_000(bid) & 500_000(ask)
 func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
-	testSize := 2
+	testSize := 5
 	asks := make([]*types.KernelOrder, 0, testSize)
 	bids := make([]*types.KernelOrder, 0, testSize)
 	var askSize int64 = 0
@@ -940,10 +940,61 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 
 	go orderAcceptor()
 
+	takerOrderSizeMap := make(map[uint64]int64)
+	makerOrderSizeMap := make(map[uint64]int64)
+	mux0 := sync.RWMutex{}
+	mux1 := sync.RWMutex{}
+	wg0 := sync.WaitGroup{}
+
 	go func() {
 		for {
-			//<-matchingInfoChan
-			fmt.Println(<-matchingInfoChan)
+			info := <-matchingInfoChan
+			wg0.Add(1)
+			go func() {
+				defer wg0.Done()
+				order := info.takerOrder
+				mux0.RLock()
+				i, ok := takerOrderSizeMap[order.KernelOrderID]
+				mux0.RUnlock()
+				if ok {
+					if i < 0 && i < order.Left {
+						mux0.Lock()
+						takerOrderSizeMap[order.KernelOrderID] = order.Amount - order.Left
+						mux0.Unlock()
+					} else if i > 0 && i > order.Left {
+						mux0.Lock()
+						takerOrderSizeMap[order.KernelOrderID] = order.Amount - order.Left
+						mux0.Unlock()
+					}
+				} else {
+					mux0.Lock()
+					takerOrderSizeMap[order.KernelOrderID] = order.Amount - order.Left
+					mux0.Unlock()
+				}
+
+				orders := info.makerOrders
+				for i2 := range orders {
+					mux1.RLock()
+					i3, ok := makerOrderSizeMap[orders[i2].KernelOrderID]
+					mux1.RUnlock()
+					if ok {
+						if i3 < 0 && i3 < orders[i2].Left {
+							mux1.Lock()
+							makerOrderSizeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
+							mux1.Unlock()
+						} else if i3 > 0 && i3 > orders[i2].Left {
+							mux1.Lock()
+							makerOrderSizeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
+							mux1.Unlock()
+						}
+					} else {
+						mux1.Lock()
+						makerOrderSizeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
+						mux1.Unlock()
+					}
+				}
+				fmt.Println(info)
+			}()
 		}
 	}()
 
@@ -970,14 +1021,13 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 
 	for b := range done {
 		if b == true {
+			// wait all matching finished
+			time.Sleep(time.Millisecond)
 			println(8*testSize, "orders done in ", (time.Now().UnixNano()-start)/(1000*1000), " ms")
 			break
 		}
 	}
-	// wait all matching finished
-	time.Sleep(time.Millisecond)
 
-	// auditing
 	wg := sync.WaitGroup{}
 	var askLeftCalFromBucketLeft int64 = 0
 	wg.Add(1)
@@ -1020,17 +1070,31 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		}
 	}()
 
+	wg0.Wait()
 	wg.Wait()
 
 	assert.Equal(t, askLeftCalFromBucketLeft, askLeftCalFromList)
 	assert.Equal(t, bidLeftCalFromBucketLeft, bidLeftCalFromList)
 	fmt.Println("----------")
-	fmt.Println(4 * askSize)
-	fmt.Println(4 * bidSize)
+	//fmt.Println(4 * askSize)
+	//fmt.Println(4 * bidSize)
 	fmt.Println("----------")
 	//fmt.Println(bidLeftCalFromBucketLeft)
 	//fmt.Println("----------")
 	//fmt.Println(-(4*askSize + askLeftCalFromBucketLeft))
 	//fmt.Println(4*bidSize - bidLeftCalFromBucketLeft)
 	fmt.Println("----------")
+	var takerSum int64 = 0
+	for k, v := range takerOrderSizeMap {
+		fmt.Println(k, " : ", v)
+		takerSum += v
+	}
+	fmt.Println("takerSum : ", takerSum)
+
+	var makerSum int64 = 0
+	for k, v := range makerOrderSizeMap {
+		fmt.Println(k, " : ", v)
+		takerSum += v
+	}
+	fmt.Println("makerSum : ", makerSum)
 }
