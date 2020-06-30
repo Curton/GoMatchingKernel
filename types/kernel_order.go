@@ -31,7 +31,7 @@ const (
 // 80 bytes
 type KernelOrder struct {
 	// Exchange Kernel KernelOrder ID
-	KernelOrderID int64 `json:"kernel_order_id,omitempty"`
+	KernelOrderID uint64 `json:"kernel_order_id,omitempty"`
 	// KernelOrder creation time
 	CreateTime int64 `json:"create_time,omitempty"`
 	// KernelOrder last modification time

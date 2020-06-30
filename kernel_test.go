@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"math"
 	"math/rand"
+	"sync"
 	"testing"
 	"time"
 )
@@ -224,7 +225,7 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 	i := 0
 	for info := range matchingInfoChan {
 		forCheck1 := types.KernelOrder{
-			KernelOrderID: 0,
+			KernelOrderID: info.makerOrders[0].KernelOrderID,
 			CreateTime:    info.makerOrders[0].CreateTime,
 			UpdateTime:    info.makerOrders[0].UpdateTime,
 			Amount:        100,
@@ -237,7 +238,7 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 			Id:            "",
 		}
 		forCheck2 := types.KernelOrder{
-			KernelOrderID: 1,
+			KernelOrderID: info.takerOrder.KernelOrderID,
 			CreateTime:    info.takerOrder.CreateTime,
 			UpdateTime:    info.takerOrder.UpdateTime,
 			Amount:        -100,
@@ -788,7 +789,7 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 
 // 买单(bid)列表有多个(2_000_000)订单, 卖单(ask)匹配到刚好匹配完所有订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
 func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
-	testSize := 20_000_000
+	testSize := 2_000_000
 	asks := make([]*types.KernelOrder, 0, testSize)
 	//bids := make([]*types.KernelOrder, 0, testSize)
 	var askSize int64 = 0
@@ -885,4 +886,151 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 	assert.Equal(t, 0, ask.Length)
 	assert.Equal(t, 1, bid.Length)
 	assert.Equal(t, math.MaxInt64+askSize, bid.Front().value.(*priceBucket).Left)
+}
+
+// 1_000_000个随机订单, 500_000(bid) & 500_000(ask)
+func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
+	testSize := 2
+	asks := make([]*types.KernelOrder, 0, testSize)
+	bids := make([]*types.KernelOrder, 0, testSize)
+	var askSize int64 = 0
+	var bidSize int64 = 0
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < testSize; i++ {
+		// 1 - 1000
+		i2 := r.Int63n(int64(1000)) + 1
+		// 1 - 100
+		i3 := r.Int63n(int64(100)) + 1
+		order := &types.KernelOrder{
+			KernelOrderID: 0,
+			CreateTime:    0,
+			UpdateTime:    0,
+			Amount:        -i3,
+			Price:         i2,
+			Left:          -i3,
+			FilledTotal:   0,
+			Status:        0,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            "",
+		}
+		asks = append(asks, order)
+		askSize -= i3
+	}
+	r = rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < testSize; i++ {
+		i2 := r.Int63n(int64(1000)) + 1
+		i3 := r.Int63n(int64(100)) + 1
+		order := &types.KernelOrder{
+			KernelOrderID: 0,
+			CreateTime:    0,
+			UpdateTime:    0,
+			Amount:        i3,
+			Price:         i2,
+			Left:          i3,
+			FilledTotal:   0,
+			Status:        0,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            "",
+		}
+		bids = append(bids, order)
+		bidSize += i3
+	}
+
+	go orderAcceptor()
+
+	go func() {
+		for {
+			//<-matchingInfoChan
+			fmt.Println(<-matchingInfoChan)
+		}
+	}()
+
+	done := make(chan bool)
+	start := time.Now().UnixNano()
+	go func() {
+		for i := range asks {
+			orderChan <- asks[i]
+			orderChan <- bids[i]
+
+			orderChan <- bids[i]
+			orderChan <- asks[i]
+
+			orderChan <- bids[i]
+			orderChan <- asks[i]
+
+			orderChan <- asks[i]
+			orderChan <- bids[i]
+			if i == testSize-1 {
+				done <- true
+			}
+		}
+	}()
+
+	for b := range done {
+		if b == true {
+			println(8*testSize, "orders done in ", (time.Now().UnixNano()-start)/(1000*1000), " ms")
+			break
+		}
+	}
+	// wait all matching finished
+	time.Sleep(time.Millisecond)
+
+	// auditing
+	wg := sync.WaitGroup{}
+	var askLeftCalFromBucketLeft int64 = 0
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for bucket := ask.Front(); bucket != nil; bucket = bucket.Next() {
+			askLeftCalFromBucketLeft += bucket.value.(*priceBucket).Left
+		}
+	}()
+	var askLeftCalFromList int64 = 0
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for bucket := ask.Front(); bucket != nil; bucket = bucket.Next() {
+			l := bucket.value.(*priceBucket).l
+			for i := l.Front(); i != nil; i = i.Next() {
+				askLeftCalFromList += i.Value.(*types.KernelOrder).Left
+			}
+		}
+	}()
+
+	var bidLeftCalFromBucketLeft int64 = 0
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for bucket := bid.Front(); bucket != nil; bucket = bucket.Next() {
+			bidLeftCalFromBucketLeft += bucket.value.(*priceBucket).Left
+		}
+	}()
+
+	var bidLeftCalFromList int64 = 0
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for bucket := bid.Front(); bucket != nil; bucket = bucket.Next() {
+			l := bucket.value.(*priceBucket).l
+			for i := l.Front(); i != nil; i = i.Next() {
+				bidLeftCalFromList += i.Value.(*types.KernelOrder).Left
+			}
+		}
+	}()
+
+	wg.Wait()
+
+	assert.Equal(t, askLeftCalFromBucketLeft, askLeftCalFromList)
+	assert.Equal(t, bidLeftCalFromBucketLeft, bidLeftCalFromList)
+	fmt.Println("----------")
+	fmt.Println(4 * askSize)
+	fmt.Println(4 * bidSize)
+	fmt.Println("----------")
+	//fmt.Println(bidLeftCalFromBucketLeft)
+	//fmt.Println("----------")
+	//fmt.Println(-(4*askSize + askLeftCalFromBucketLeft))
+	//fmt.Println(4*bidSize - bidLeftCalFromBucketLeft)
+	fmt.Println("----------")
 }

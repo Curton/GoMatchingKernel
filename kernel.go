@@ -127,8 +127,9 @@ func insertCheckedOrder(order *types.KernelOrder) bool {
 }
 
 // clear a price level/bucket
-func clearBucket(bucket *priceBucket, order types.KernelOrder, wg *sync.WaitGroup) {
+func clearBucket(side *SkipList, e *Element, order types.KernelOrder, wg *sync.WaitGroup) {
 	defer wg.Done()
+	bucket := e.Value().(*priceBucket)
 	if order.Left == 0 {
 		order.Status = types.CLOSED
 	}
@@ -141,52 +142,47 @@ func clearBucket(bucket *priceBucket, order types.KernelOrder, wg *sync.WaitGrou
 	element := bucket.l.Back()
 	for v := element; v != nil; v = v.Prev() {
 		matchedOrder := v.Value.(*types.KernelOrder)
-		matchedOrder.FilledTotal = matchedOrder.Amount * matchedOrder.Price
+		matchedOrder.FilledTotal += matchedOrder.Left * matchedOrder.Price
 		matchedOrder.Left = 0
 		matchedOrder.Status = types.CLOSED
 		matchedOrder.UpdateTime = order.UpdateTime
 		makerOrders = append(makerOrders, *matchedOrder)
 	}
 	matchingInfo.makerOrders = makerOrders
-
 	// remove bucket
-	price := element.Value.(*types.KernelOrder).Price
-	if order.Amount < 0 {
-		bid.Remove(float64(-price))
-	} else {
-		ask.Remove(float64(price))
-	}
+	bucket.Left = 0
+	bucket.l = list.List{}
+	side.Remove(e.key)
 	// send matched
 	matchingInfoChan <- matchingInfo
 }
 
 // run in single thread,  需确证可撮合的订单进入
-func matchingOrder(side *SkipList, order *types.KernelOrder, isAsk bool) {
+func matchingOrder(side *SkipList, takerOrder *types.KernelOrder, isAsk bool) {
 	wg := sync.WaitGroup{}
 
-	// GTC order
-	if order.TimeInForce == types.GTC {
+	// GTC takerOrder
+	if takerOrder.TimeInForce == types.GTC {
 	Loop:
-		for b := side.Front(); b != nil; b = b.Next() {
-			bucket := b.Value().(*priceBucket)
+		for e := side.Front(); e != nil; e = e.Next() {
+			bucket := e.Value().(*priceBucket)
 			bucketListHead := bucket.l.Front().Value.(*types.KernelOrder)
 			// check price
 
-			if isAsk && bucketListHead.Price < order.Price {
+			if isAsk && bucketListHead.Price < takerOrder.Price {
 				break Loop
-			} else if !isAsk && bucketListHead.Price > order.Price {
+			} else if !isAsk && bucketListHead.Price > takerOrder.Price {
 				break Loop
 			}
-			// check whether enough amount of order in a bucket
-			if (isAsk && bucket.Left <= -order.Left) || (!isAsk && bucket.Left >= -order.Left) {
+			// check whether enough amount of takerOrder in a bucket
+			if (isAsk && bucket.Left <= -takerOrder.Left) || (!isAsk && bucket.Left >= -takerOrder.Left) {
 				// 可异步清空价价格篮子
-				order.Left += bucket.Left
-				order.FilledTotal -= bucket.Left * bucketListHead.Price
+				takerOrder.Left += bucket.Left
+				takerOrder.FilledTotal -= bucket.Left * bucketListHead.Price
 				wg.Add(1)
-				go clearBucket(bucket, *order, &wg)
+				go clearBucket(side, e, *takerOrder, &wg)
 			} else { // 匹配剩余订单
-				if order.Left == 0 {
-					//order.Status = types.CLOSED
+				if takerOrder.Left == 0 {
 					break Loop
 				}
 				matchingInfo := &matchingInfo{
@@ -196,11 +192,12 @@ func matchingOrder(side *SkipList, order *types.KernelOrder, isAsk bool) {
 				for v := bucket.l.Back(); v != nil; v = v.Prev() {
 					matchedOrder := v.Value.(*types.KernelOrder)
 					unixNano := time.Now().UnixNano()
-					if (isAsk && matchedOrder.Left <= -order.Left) || (!isAsk && matchedOrder.Left >= -order.Left) {
+					if (isAsk && matchedOrder.Left <= -takerOrder.Left) || (!isAsk && matchedOrder.Left >= -takerOrder.Left) {
 						// 全部吃完
-						order.Left += matchedOrder.Left
-
-						matchedOrder.FilledTotal = matchedOrder.Amount * matchedOrder.Price
+						bucket.Left -= matchedOrder.Left
+						takerOrder.Left += matchedOrder.Left
+						matchedOrder.FilledTotal += matchedOrder.Left * matchedOrder.Price
+						takerOrder.FilledTotal -= matchedOrder.Left * matchedOrder.Price
 						matchedOrder.Left = 0
 						matchedOrder.Status = types.CLOSED
 						matchedOrder.UpdateTime = unixNano
@@ -209,17 +206,18 @@ func matchingOrder(side *SkipList, order *types.KernelOrder, isAsk bool) {
 						bucket.l.Remove(v)
 					} else {
 						// 吃了完了还有剩余
-
-						matchedOrder.FilledTotal = -order.Left * matchedOrder.Price
-						matchedOrder.Left += order.Left
-						order.Left = 0
+						matchedOrder.FilledTotal -= takerOrder.Left * matchedOrder.Price
+						takerOrder.FilledTotal += takerOrder.Left * matchedOrder.Price
+						matchedOrder.Left += takerOrder.Left
+						bucket.Left += takerOrder.Left
+						takerOrder.Left = 0
 						matchedOrder.UpdateTime = unixNano
 						makerOrders = append(makerOrders, *matchedOrder)
 					}
-					if order.Left == 0 {
-						order.UpdateTime = unixNano
-						order.Status = types.CLOSED
-						matchingInfo.takerOrder = *order
+					if takerOrder.Left == 0 {
+						takerOrder.UpdateTime = unixNano
+						takerOrder.Status = types.CLOSED
+						matchingInfo.takerOrder = *takerOrder
 						matchingInfo.makerOrders = makerOrders
 						// send matched
 						matchingInfoChan <- matchingInfo
@@ -231,8 +229,8 @@ func matchingOrder(side *SkipList, order *types.KernelOrder, isAsk bool) {
 		// Loop end
 
 		// 还有剩余的不能成交, 插入卖单队列
-		if order.Left != 0 {
-			insertCheckedOrder(order)
+		if takerOrder.Left != 0 {
+			insertCheckedOrder(takerOrder)
 		}
 	}
 
