@@ -12,7 +12,6 @@ import (
 	"container/list"
 	"exchangeKernel/types"
 	"math"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -23,6 +22,7 @@ var (
 	ask1Price        int64 = math.MaxInt64
 	bid1Price        int64 = math.MinInt64
 	matchingInfoChan       = make(chan *matchingInfo)
+	errorInfoChan          = make(chan *KernelErr)
 	ask1PriceMux           = sync.Mutex{}
 	bid1PriceMux           = sync.Mutex{}
 )
@@ -31,6 +31,11 @@ type matchingInfo struct {
 	makerOrders    []types.KernelOrder
 	takerOrder     types.KernelOrder
 	matchedSizeMap map[uint64]int64
+}
+
+type KernelErr struct {
+	code int32
+	msg  string
 }
 
 // new order at the head of the list, old order at the tail of the list
@@ -59,7 +64,7 @@ func takeOrderBook() *orderBook {
 	return orderBook
 }
 
-// after price & amount checked, (不同价格)的(不可成交)订单可以同时插入, 以上两个条件需同时满足
+// after price & amount checked, 附条件异步, (不同价格)的(不可成交)订单可以同时插入, 以上两个条件需同时满足
 func insertCheckedOrder(order *types.KernelOrder) bool {
 	if order.Amount < 0 {
 		get := ask.Get(float64(order.Price))
@@ -150,7 +155,6 @@ func clearBucket(e *Element, takerOrder types.KernelOrder, wg *sync.WaitGroup, t
 		makerOrders = append(makerOrders, *matchedOrder)
 	}
 	matchingInfo.makerOrders = makerOrders
-	//bucket = nil
 	matchingInfoChan <- matchingInfo
 }
 
@@ -182,8 +186,6 @@ func matchingOrder(side *SkipList, takerOrder *types.KernelOrder, isAsk bool) {
 				wg.Add(1)
 				//clearBucket(skipListElement, *takerOrder, &wg)
 				go clearBucket(skipListElement, *takerOrder, &wg, bucket.Left)
-				// todo
-				//time.Sleep(time.Millisecond)
 			} else { // 匹配剩余订单
 				if takerOrder.Left == 0 {
 					break Loop
@@ -228,13 +230,11 @@ func matchingOrder(side *SkipList, takerOrder *types.KernelOrder, isAsk bool) {
 						matchingInfo.takerOrder = *takerOrder
 						// send matched
 						matchingInfoChan <- matchingInfo
-						// todo
-						//time.Sleep(time.Millisecond)
 						break Loop
 					}
 				}
 				// fail fast
-				panic("takerOrder.Left expected to be 0, actual value is " + strconv.FormatInt(takerOrder.Left, 10))
+				//panic("takerOrder.Left expected to be 0, actual value is " + strconv.FormatInt(takerOrder.Left, 10))
 			}
 		}
 		// Loop end
