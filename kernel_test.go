@@ -1095,7 +1095,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 			bidSum += v
 		}
 	}
-	assert.Equal(t, askSum, bidSum)
+	assert.Equal(t, askSum, -bidSum)
 	//fmt.Println("askSum : ", askSum)
 	//fmt.Println("bidSum : ", bidSum)
 }

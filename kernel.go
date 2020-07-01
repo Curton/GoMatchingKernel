@@ -150,7 +150,7 @@ func clearBucket(e *Element, takerOrder types.KernelOrder, wg *sync.WaitGroup, t
 		makerOrders = append(makerOrders, *matchedOrder)
 	}
 	matchingInfo.makerOrders = makerOrders
-	bucket = nil
+	//bucket = nil
 	matchingInfoChan <- matchingInfo
 }
 
