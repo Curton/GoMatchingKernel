@@ -16,6 +16,7 @@ var (
 	//orderBuff = make([]*types.KernelOrder, 0, 8)
 	serverId   uint16 = 1
 	serverMask        = uint64(serverId) << (64 - 16 - 1)
+	r                 = rand.New(rand.NewSource(time.Now().UnixNano()))
 )
 
 // run in go routine
@@ -24,7 +25,7 @@ func orderAcceptor() {
 	for recv := range orderChan {
 		kernelOrder := *recv
 		kernelOrder.CreateTime = time.Now().UnixNano()
-		uint64R := uint64(rand.NewSource(kernelOrder.CreateTime).Int63())
+		uint64R := uint64(r.Int63())
 		kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | serverMask // use the first 16 bits as server Id
 		if kernelOrder.Type == types.LIMIT {
 			// 限价单

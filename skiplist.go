@@ -79,8 +79,8 @@ func (list *SkipList) Get(key float64) *Element {
 // Returns removed element pointer if found, nil if not found.
 // Locking is optimistic and happens only after searching with a fast check on adjacent nodes after locking.
 func (list *SkipList) Remove(key float64) *Element {
-	list.mutex.Lock()
-	defer list.mutex.Unlock()
+	//list.mutex.Lock()
+	//defer list.mutex.Unlock()
 	prevs := list.getPrevElementNodes(key)
 
 	// found the element, remove it

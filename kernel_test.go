@@ -788,16 +788,19 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 }
 
 // 买单(bid)列表有多个(2_000_000)订单, 卖单(ask)匹配到刚好匹配完所有订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
+// test clearBucket
 func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 	testSize := 2_000_000
+	//testSize := 100_000
 	asks := make([]*types.KernelOrder, 0, testSize)
 	//bids := make([]*types.KernelOrder, 0, testSize)
 	var askSize int64 = 0
 	//var bidSize int64 = 0
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < testSize; i++ {
-		// 1 - 1000
+		// 1 - 1000, price
 		i2 := r.Int63n(int64(1000)) + 1
+		//i2 := int64(i + 1)
 		// 1 - 100
 		i3 := r.Int63n(int64(100)) + 1
 		order := &types.KernelOrder{
@@ -816,44 +819,52 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 		asks = append(asks, order)
 		askSize -= i3
 	}
-	//for i := 0; i < testSize; i++ {
-	//	i2 := r.Int63n(int64(100)) + 99
-	//	i3 := r.Int63n(int64(100))
-	//	order := &types.KernelOrder{
-	//		KernelOrderID: 0,
-	//		CreateTime:    0,
-	//		UpdateTime:    0,
-	//		Amount:        i3,
-	//		Price:         i2,
-	//		Left:          i3,
-	//		FilledTotal:   0,
-	//		Status:        0,
-	//		Type:          0,
-	//		TimeInForce:   0,
-	//		Id:            "",
-	//	}
-	//	bids = append(bids, order)
-	//	bidSize += i3
-	//}
 
 	go orderAcceptor()
 
+	takerVolumeMap := make(map[uint64]int64)
+	makerVolumeMap := make(map[uint64]int64)
 	go func() {
 		for {
-			<-matchingInfoChan
+			info := <-matchingInfoChan
+			var checkSum int64 = 0
+			for _, v := range info.matchedSizeMap {
+				assert.NotEqual(t, int64(0), v)
+				checkSum += v
+			}
+			assert.Equal(t, int64(0), checkSum)
+
+			//fmt.Println(*info)
+
+			// taker
+			takerOrder := info.takerOrder
+			i, ok := takerVolumeMap[takerOrder.KernelOrderID]
+			if ok {
+				if i < 0 && i > takerOrder.Amount-takerOrder.Left {
+					takerVolumeMap[takerOrder.KernelOrderID] = takerOrder.Amount - takerOrder.Left
+				} else if i > 0 && i < takerOrder.Amount-takerOrder.Left {
+					takerVolumeMap[takerOrder.KernelOrderID] = takerOrder.Amount - takerOrder.Left
+				}
+			} else {
+				takerVolumeMap[takerOrder.KernelOrderID] = takerOrder.Amount - takerOrder.Left
+			}
+
+			makerOrders := info.makerOrders
+			for i2 := range makerOrders {
+				mapV, ok := makerVolumeMap[makerOrders[i2].KernelOrderID]
+				if ok {
+					if mapV < 0 && mapV > makerOrders[i2].Amount-makerOrders[i2].Left {
+						makerVolumeMap[makerOrders[i2].KernelOrderID] = makerOrders[i2].Amount - makerOrders[i2].Left
+					} else if mapV > 0 && mapV < makerOrders[i2].Amount-makerOrders[i2].Left {
+						makerVolumeMap[makerOrders[i2].KernelOrderID] = makerOrders[i2].Amount - makerOrders[i2].Left
+					}
+				} else {
+					makerVolumeMap[makerOrders[i2].KernelOrderID] = makerOrders[i2].Amount - makerOrders[i2].Left
+				}
+			}
+
 		}
 	}()
-
-	//go func() {
-	//	for info := range matchingInfoChan {
-	//		fmt.Println("taker: ", info.takerOrder)
-	//		fmt.Println("------------------")
-	//		for i := range info.makerOrders {
-	//			fmt.Println("maker: ",info.makerOrders[i])
-	//		}
-	//		fmt.Println("##################")
-	//	}
-	//}()
 
 	for i := range asks {
 		orderChan <- asks[i]
@@ -878,7 +889,7 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 	orderChan <- order2
 	time.Sleep(time.Millisecond)
 	for ask1Price != math.MaxInt64 {
-		time.Sleep(time.Millisecond)
+		time.Sleep(time.Second)
 		//println(ask1Price)
 	}
 	assert.Equal(t, int64(math.MaxInt64), ask1Price)
@@ -886,11 +897,25 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 	assert.Equal(t, 0, ask.Length)
 	assert.Equal(t, 1, bid.Length)
 	assert.Equal(t, math.MaxInt64+askSize, bid.Front().value.(*priceBucket).Left)
+	var takerSum int64
+	for _, v := range takerVolumeMap {
+		takerSum += v
+	}
+	var makerSum int64
+	for _, v := range makerVolumeMap {
+		makerSum += v
+	}
+	assert.Equal(t, takerSum, -askSize)
+	assert.Equal(t, takerSum, -makerSum)
+	assert.Equal(t, makerSum, askSize)
+	//fmt.Println("takerSum : ", takerSum)
+	//fmt.Println("makerSum : ", makerSum)
+	//fmt.Println("askSize : ", askSize)
 }
 
 // 1_000_000个随机订单, 500_000(bid) & 500_000(ask)
 func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
-	testSize := 5
+	testSize := 10_000
 	asks := make([]*types.KernelOrder, 0, testSize)
 	bids := make([]*types.KernelOrder, 0, testSize)
 	var askSize int64 = 0
@@ -940,61 +965,46 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 
 	go orderAcceptor()
 
-	takerOrderSizeMap := make(map[uint64]int64)
-	makerOrderSizeMap := make(map[uint64]int64)
-	mux0 := sync.RWMutex{}
-	mux1 := sync.RWMutex{}
-	wg0 := sync.WaitGroup{}
+	//takerOrderSizeMap := make(map[uint64]int64)
+	//makerOrderSizeMap := make(map[uint64]int64)
+	orderVolumeMap := make(map[uint64]int64)
+	//mux0 := sync.RWMutex{}
+	//mux1 := sync.RWMutex{}
 
 	go func() {
 		for {
 			info := <-matchingInfoChan
-			wg0.Add(1)
-			go func() {
-				defer wg0.Done()
-				order := info.takerOrder
-				mux0.RLock()
-				i, ok := takerOrderSizeMap[order.KernelOrderID]
-				mux0.RUnlock()
+			order := info.takerOrder
+			i, ok := orderVolumeMap[order.KernelOrderID]
+			if ok {
+				if i < 0 && i > order.Amount-order.Left {
+					orderVolumeMap[order.KernelOrderID] = order.Amount - order.Left
+				} else if i > 0 && i < order.Amount-order.Left {
+					orderVolumeMap[order.KernelOrderID] = order.Amount - order.Left
+				}
+			} else {
+				orderVolumeMap[order.KernelOrderID] = order.Amount - order.Left
+			}
+
+			orders := info.makerOrders
+			for i2 := range orders {
+				i3, ok := orderVolumeMap[orders[i2].KernelOrderID]
 				if ok {
-					if i < 0 && i < order.Left {
-						mux0.Lock()
-						takerOrderSizeMap[order.KernelOrderID] = order.Amount - order.Left
-						mux0.Unlock()
-					} else if i > 0 && i > order.Left {
-						mux0.Lock()
-						takerOrderSizeMap[order.KernelOrderID] = order.Amount - order.Left
-						mux0.Unlock()
+					if i3 < 0 && i3 > orders[i2].Amount-orders[i2].Left {
+						orderVolumeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
+					} else if i3 > 0 && i3 < orders[i2].Amount-orders[i2].Left {
+						orderVolumeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
 					}
 				} else {
-					mux0.Lock()
-					takerOrderSizeMap[order.KernelOrderID] = order.Amount - order.Left
-					mux0.Unlock()
+					orderVolumeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
 				}
-
-				orders := info.makerOrders
-				for i2 := range orders {
-					mux1.RLock()
-					i3, ok := makerOrderSizeMap[orders[i2].KernelOrderID]
-					mux1.RUnlock()
-					if ok {
-						if i3 < 0 && i3 < orders[i2].Left {
-							mux1.Lock()
-							makerOrderSizeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
-							mux1.Unlock()
-						} else if i3 > 0 && i3 > orders[i2].Left {
-							mux1.Lock()
-							makerOrderSizeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
-							mux1.Unlock()
-						}
-					} else {
-						mux1.Lock()
-						makerOrderSizeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
-						mux1.Unlock()
-					}
-				}
-				fmt.Println(info)
-			}()
+			}
+			var checkSum int64 = 0
+			for _, v := range info.matchedSizeMap {
+				assert.NotEqual(t, int64(0), v)
+				checkSum += v
+			}
+			assert.Equal(t, int64(0), checkSum)
 		}
 	}()
 
@@ -1019,11 +1029,12 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		}
 	}()
 
+	// 等待订单处理完毕, 开始审计
 	for b := range done {
 		if b == true {
 			// wait all matching finished
-			time.Sleep(time.Millisecond)
 			println(8*testSize, "orders done in ", (time.Now().UnixNano()-start)/(1000*1000), " ms")
+			time.Sleep(time.Second * 3)
 			break
 		}
 	}
@@ -1070,31 +1081,36 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		}
 	}()
 
-	wg0.Wait()
 	wg.Wait()
 
 	assert.Equal(t, askLeftCalFromBucketLeft, askLeftCalFromList)
 	assert.Equal(t, bidLeftCalFromBucketLeft, bidLeftCalFromList)
-	fmt.Println("----------")
+	//fmt.Println("----------")
 	//fmt.Println(4 * askSize)
 	//fmt.Println(4 * bidSize)
-	fmt.Println("----------")
+	//fmt.Println("----------")
 	//fmt.Println(bidLeftCalFromBucketLeft)
 	//fmt.Println("----------")
 	//fmt.Println(-(4*askSize + askLeftCalFromBucketLeft))
 	//fmt.Println(4*bidSize - bidLeftCalFromBucketLeft)
-	fmt.Println("----------")
-	var takerSum int64 = 0
-	for k, v := range takerOrderSizeMap {
-		fmt.Println(k, " : ", v)
-		takerSum += v
+	//fmt.Println("----------")
+	var askSum int64 = 0
+	var bidSum int64 = 0
+	for _, v := range orderVolumeMap {
+		//fmt.Println(k, " : ", v)
+		if v < 0 {
+			askSum += v
+		} else {
+			bidSum += v
+		}
 	}
-	fmt.Println("takerSum : ", takerSum)
+	fmt.Println("askSum : ", askSum)
+	fmt.Println("bidSum : ", bidSum)
 
-	var makerSum int64 = 0
-	for k, v := range makerOrderSizeMap {
-		fmt.Println(k, " : ", v)
-		takerSum += v
-	}
-	fmt.Println("makerSum : ", makerSum)
+	//var makerSum int64 = 0
+	//for k, v := range makerOrderSizeMap {
+	//	fmt.Println(k, " : ", v)
+	//	makerSum += v
+	//}
+	//fmt.Println("makerSum : ", makerSum)
 }
