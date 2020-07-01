@@ -887,9 +887,8 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 		Id:          "",
 	}
 	orderChan <- order2
-	time.Sleep(time.Millisecond)
 	for ask1Price != math.MaxInt64 {
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond * 100)
 		//println(ask1Price)
 	}
 	assert.Equal(t, int64(math.MaxInt64), ask1Price)
@@ -915,7 +914,7 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 
 // 1_000_000个随机订单, 500_000(bid) & 500_000(ask)
 func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
-	testSize := 10_000
+	testSize := 125_000 // * 8
 	asks := make([]*types.KernelOrder, 0, testSize)
 	bids := make([]*types.KernelOrder, 0, testSize)
 	var askSize int64 = 0
@@ -1085,15 +1084,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 
 	assert.Equal(t, askLeftCalFromBucketLeft, askLeftCalFromList)
 	assert.Equal(t, bidLeftCalFromBucketLeft, bidLeftCalFromList)
-	//fmt.Println("----------")
-	//fmt.Println(4 * askSize)
-	//fmt.Println(4 * bidSize)
-	//fmt.Println("----------")
-	//fmt.Println(bidLeftCalFromBucketLeft)
-	//fmt.Println("----------")
-	//fmt.Println(-(4*askSize + askLeftCalFromBucketLeft))
-	//fmt.Println(4*bidSize - bidLeftCalFromBucketLeft)
-	//fmt.Println("----------")
+
 	var askSum int64 = 0
 	var bidSum int64 = 0
 	for _, v := range orderVolumeMap {
@@ -1104,13 +1095,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 			bidSum += v
 		}
 	}
-	fmt.Println("askSum : ", askSum)
-	fmt.Println("bidSum : ", bidSum)
-
-	//var makerSum int64 = 0
-	//for k, v := range makerOrderSizeMap {
-	//	fmt.Println(k, " : ", v)
-	//	makerSum += v
-	//}
-	//fmt.Println("makerSum : ", makerSum)
+	assert.Equal(t, askSum, bidSum)
+	//fmt.Println("askSum : ", askSum)
+	//fmt.Println("bidSum : ", bidSum)
 }
