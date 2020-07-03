@@ -51,5 +51,5 @@ type KernelOrder struct {
 	// Time in force  - gtc: GoodTillCancelled - ioc: ImmediateOrCancelled, taker only - poc: PendingOrCancelled, reduce only
 	TimeInForce TimeInForce `json:"time_in_force,omitempty"`
 	// Order ID
-	Id string `json:"id,omitempty"`
+	Id uint64 `json:"id,omitempty"`
 }

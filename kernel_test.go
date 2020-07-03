@@ -30,7 +30,7 @@ func Test_insertPriceCheckedOrder_WithSamePrice(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	order2 := types.KernelOrder{
 		KernelOrderID: 0,
@@ -43,7 +43,7 @@ func Test_insertPriceCheckedOrder_WithSamePrice(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	insertCheckedOrder(&order)
 	insertCheckedOrder(&order)
@@ -90,7 +90,7 @@ func Benchmark_insertPriceCheckedOrder(b *testing.B) {
 			Status:        0,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		asks = append(asks, order)
 		askSize -= i3
@@ -109,7 +109,7 @@ func Benchmark_insertPriceCheckedOrder(b *testing.B) {
 			Status:        0,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		bids = append(bids, order)
 		bidSize += i3
@@ -143,7 +143,7 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 			Status:        0,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		asks = append(asks, order)
 		askSize -= i3
@@ -162,7 +162,7 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 			Status:        0,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		bids = append(bids, order)
 		bidSize += i3
@@ -201,7 +201,7 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	// ask
 	order2 := &types.KernelOrder{
@@ -215,7 +215,7 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 
 	go orderAcceptor()
@@ -235,7 +235,7 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 			Status:        types.CLOSED,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		forCheck2 := types.KernelOrder{
 			KernelOrderID: info.takerOrder.KernelOrderID,
@@ -248,7 +248,7 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 			Status:        types.CLOSED,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		assert.Equal(t, forCheck1, info.makerOrders[0])
 		assert.Equal(t, forCheck2, info.takerOrder)
@@ -279,7 +279,7 @@ func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	// bid
 	order2 := &types.KernelOrder{
@@ -293,7 +293,7 @@ func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 
 	go orderAcceptor()
@@ -314,7 +314,7 @@ func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 			Status:        types.CLOSED,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		// maker, ask
 		forCheck2 := types.KernelOrder{
@@ -328,7 +328,7 @@ func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 			Status:        types.CLOSED,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		assert.Equal(t, forCheck1, info.takerOrder)
 		assert.Equal(t, forCheck2, info.makerOrders[0])
@@ -358,7 +358,7 @@ func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	order2 := &types.KernelOrder{
 		KernelOrderID: 1,
@@ -371,7 +371,7 @@ func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 
 	go orderAcceptor()
@@ -391,7 +391,7 @@ func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 			Status:        types.CLOSED,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		forCheck2 := types.KernelOrder{
 			KernelOrderID: 1,
@@ -404,7 +404,7 @@ func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 			Status:        types.CLOSED,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		assert.Equal(t, forCheck1, info.makerOrders[0])
 		assert.Equal(t, forCheck2, info.takerOrder)
@@ -435,7 +435,7 @@ func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	// bid
 	order2 := &types.KernelOrder{
@@ -449,7 +449,7 @@ func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 
 	go orderAcceptor()
@@ -469,7 +469,7 @@ func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 			Status:        types.CLOSED,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		forCheck2 := types.KernelOrder{
 			KernelOrderID: 0,
@@ -482,7 +482,7 @@ func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 			Status:        types.CLOSED,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		assert.Equal(t, forCheck1, info.takerOrder)
 		assert.Equal(t, forCheck2, info.makerOrders[0])
@@ -513,7 +513,7 @@ func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	// ask
 	order2 := &types.KernelOrder{
@@ -527,7 +527,7 @@ func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 
 	go orderAcceptor()
@@ -548,7 +548,7 @@ func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 			Status:        types.CLOSED,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		// ask
 		forCheck2 := types.KernelOrder{
@@ -562,7 +562,7 @@ func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 			Status:        types.OPEN,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		assert.Equal(t, forCheck1, info.makerOrders[0])
 		assert.Equal(t, forCheck2, info.takerOrder)
@@ -597,7 +597,7 @@ func Test_matchingDidOrder_MatchOneButIncomplete2(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	// bid
 	order2 := &types.KernelOrder{
@@ -611,7 +611,7 @@ func Test_matchingDidOrder_MatchOneButIncomplete2(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 
 	go orderAcceptor()
@@ -632,7 +632,7 @@ func Test_matchingDidOrder_MatchOneButIncomplete2(t *testing.T) {
 			Status:        types.OPEN,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		// maker, ask
 		forCheck2 := types.KernelOrder{
@@ -646,7 +646,7 @@ func Test_matchingDidOrder_MatchOneButIncomplete2(t *testing.T) {
 			Status:        types.CLOSED,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		assert.Equal(t, forCheck1, info.takerOrder)
 		assert.Equal(t, forCheck2, info.makerOrders[0])
@@ -681,7 +681,7 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	// bid2
 	order2 := &types.KernelOrder{
@@ -695,7 +695,7 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	// bid3
 	order3 := &types.KernelOrder{
@@ -709,7 +709,7 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	// ask
 	order4 := &types.KernelOrder{
@@ -723,7 +723,7 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 
 	go orderAcceptor()
@@ -762,7 +762,7 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 		//	Status:        types.CLOSED,
 		//	Type:          0,
 		//	TimeInForce:   0,
-		//	Id:            "",
+		//	Id:            0,
 		//}
 		//forCheck2 := types.KernelOrder{
 		//	KernelOrderID: 1,
@@ -775,7 +775,7 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 		//	Status:        types.CLOSED,
 		//	Type:          0,
 		//	TimeInForce:   0,
-		//	Id:            "",
+		//	Id:            0,
 		//}
 		//assert.Equal(t, forCheck1, info.makerOrders[0])
 		//assert.Equal(t, forCheck2, info.takerOrder)
@@ -814,7 +814,7 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 			Status:        0,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		asks = append(asks, order)
 		askSize -= i3
@@ -884,7 +884,7 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 		Status:      0,
 		Type:        0,
 		TimeInForce: 0,
-		Id:          "",
+		Id:          0,
 	}
 	orderChan <- order2
 	for ask1Price != math.MaxInt64 {
@@ -936,7 +936,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 			Status:        0,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		asks = append(asks, order)
 		askSize -= i3
@@ -956,7 +956,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 			Status:        0,
 			Type:          0,
 			TimeInForce:   0,
-			Id:            "",
+			Id:            0,
 		}
 		bids = append(bids, order)
 		bidSize += i3

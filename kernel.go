@@ -21,21 +21,21 @@ var (
 	bid                    = New() // skip-list
 	ask1Price        int64 = math.MaxInt64
 	bid1Price        int64 = math.MinInt64
-	matchingInfoChan       = make(chan *matchingInfo)
+	matchingInfoChan       = make(chan *matchedInfo)
 	errorInfoChan          = make(chan *KernelErr)
 	ask1PriceMux           = sync.Mutex{}
 	bid1PriceMux           = sync.Mutex{}
 )
 
-type matchingInfo struct {
+type matchedInfo struct {
 	makerOrders    []types.KernelOrder
 	takerOrder     types.KernelOrder
 	matchedSizeMap map[uint64]int64
 }
 
-type KernelErr struct {
-	code int32
-	msg  string
+type KernelErr error
+
+type Kernel struct {
 }
 
 // new order at the head of the list, old order at the tail of the list
@@ -137,7 +137,7 @@ func insertCheckedOrder(order *types.KernelOrder) bool {
 func clearBucket(e *Element, takerOrder types.KernelOrder, wg *sync.WaitGroup, took int64) {
 	defer wg.Done()
 	bucket := e.Value().(*priceBucket)
-	matchingInfo := &matchingInfo{
+	matchingInfo := &matchedInfo{
 		makerOrders:    nil,
 		takerOrder:     takerOrder,
 		matchedSizeMap: make(map[uint64]int64),
@@ -190,7 +190,7 @@ func matchingOrder(side *SkipList, takerOrder *types.KernelOrder, isAsk bool) {
 				if takerOrder.Left == 0 {
 					break Loop
 				}
-				matchingInfo := &matchingInfo{
+				matchingInfo := &matchedInfo{
 					makerOrders:    make([]types.KernelOrder, 0, bucket.l.Len()),
 					matchedSizeMap: make(map[uint64]int64),
 				}
