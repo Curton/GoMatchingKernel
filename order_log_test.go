@@ -13,13 +13,13 @@ import (
 // GOMAXPROCS=1 go test -bench=BenchmarkWrite -run=none -benchtime=1s -benchmem
 func BenchmarkWrite(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteOrderLog(nil)
+		writeOrderLog(nil)
 	}
 }
 
 func TestWrite(t *testing.T) {
 	for i := 0; i < 10000; i++ {
-		if WriteOrderLog(&types.KernelOrder{
+		if writeOrderLog(&types.KernelOrder{
 			KernelOrderID: 0,
 			CreateTime:    0,
 			UpdateTime:    0,

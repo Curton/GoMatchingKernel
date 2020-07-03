@@ -13,6 +13,8 @@ import (
 
 var (
 	orderChan = make(chan *types.KernelOrder)
+	//writeLogChan        = make(chan *types.KernelOrder)
+	//writeLogConfirmChan = make(chan bool)
 	//orderBuff = make([]*types.KernelOrder, 0, 8)
 	serverId   uint16 = 1
 	serverMask        = uint64(serverId) << (64 - 16 - 1)
@@ -22,12 +24,16 @@ var (
 // run in go routine
 // 判断 限价单 与 市价单
 func orderAcceptor() {
+	//go logAcceptor()
 	for recv := range orderChan {
 		kernelOrder := *recv
 		kernelOrder.CreateTime = time.Now().UnixNano()
 		uint64R := uint64(r.Int63())
 		kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | serverMask // use the first 16 bits as server Id
-		WriteOrderLog(&kernelOrder)
+		// write log
+		writeOrderLog(&kernelOrder)
+		//writeLogChan <- &kernelOrder
+		//<- writeLogConfirmChan
 		if kernelOrder.Type == types.LIMIT {
 			// 限价单
 			if kernelOrder.Amount > 0 {
@@ -53,3 +59,11 @@ func orderAcceptor() {
 		}
 	}
 }
+
+//
+//func logAcceptor() {
+//	for order := range writeLogChan {
+//		writeOrderLog(order)
+//		writeLogConfirmChan <- true
+//	}
+//}

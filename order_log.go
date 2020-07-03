@@ -16,7 +16,7 @@ import (
 
 var f *os.File
 
-func WriteOrderLog(kernelOder *types.KernelOrder) bool {
+func writeOrderLog(kernelOder *types.KernelOrder) bool {
 
 	if f == nil {
 		var err error
