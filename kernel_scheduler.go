@@ -27,6 +27,7 @@ func orderAcceptor() {
 		kernelOrder.CreateTime = time.Now().UnixNano()
 		uint64R := uint64(r.Int63())
 		kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | serverMask // use the first 16 bits as server Id
+		WriteOrderLog(&kernelOrder)
 		if kernelOrder.Type == types.LIMIT {
 			// 限价单
 			if kernelOrder.Amount > 0 {

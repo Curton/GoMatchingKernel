@@ -18,7 +18,7 @@ func TestOrderSize(t *testing.T) {
 		Status:        0,
 		Type:          0,
 		TimeInForce:   0,
-		Id:            "",
+		Id:            0,
 	}
 	println(unsafe.Sizeof(kernelOrder))
 }

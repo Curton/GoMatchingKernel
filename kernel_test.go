@@ -912,9 +912,9 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 	//fmt.Println("askSize : ", askSize)
 }
 
-// 1_000_000个随机订单, 500_000(bid) & 500_000(ask)
+// 100_000个随机订单, 50_000(bid) & 50_000(ask)
 func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
-	testSize := 125_000 // * 8
+	testSize := 12_500 // * 8
 	asks := make([]*types.KernelOrder, 0, testSize)
 	bids := make([]*types.KernelOrder, 0, testSize)
 	var askSize int64 = 0
@@ -1033,7 +1033,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		if b == true {
 			// wait all matching finished
 			println(8*testSize, "orders done in ", (time.Now().UnixNano()-start)/(1000*1000), " ms")
-			time.Sleep(time.Second * 3)
+			time.Sleep(time.Second)
 			break
 		}
 	}
@@ -1088,7 +1088,6 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	var askSum int64 = 0
 	var bidSum int64 = 0
 	for _, v := range orderVolumeMap {
-		//fmt.Println(k, " : ", v)
 		if v < 0 {
 			askSum += v
 		} else {
@@ -1096,6 +1095,4 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		}
 	}
 	assert.Equal(t, askSum, -bidSum)
-	//fmt.Println("askSum : ", askSum)
-	//fmt.Println("bidSum : ", bidSum)
 }

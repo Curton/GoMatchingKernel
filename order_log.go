@@ -7,44 +7,16 @@ package exchangeKernel
 
 import (
 	"bytes"
-	"encoding/binary"
+	"encoding/gob"
 	"exchangeKernel/types"
 	"os"
 	"strconv"
 	"time"
 )
 
-func WriteOrderLog(kernelOder *types.KernelOrder) bool {
-
-	f, err := os.OpenFile(strconv.FormatInt(time.Now().Unix(), 10)+".log",
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return false
-	}
-
-	buf := &bytes.Buffer{}
-	if err := binary.Write(buf, binary.LittleEndian, kernelOder); err != nil {
-		return false
-	}
-
-	if _, err := f.Write(buf.Bytes()); err != nil {
-		return false
-	}
-
-	if err := f.Sync(); err != nil {
-		return false
-	}
-	if err := f.Close(); err != nil {
-		return false
-	}
-	return true
-}
-
 var f *os.File
 
-var data = []byte("qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmq\nqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmq\n")
-
-func WriteLog() bool {
+func WriteOrderLog(kernelOder *types.KernelOrder) bool {
 
 	if f == nil {
 		var err error
@@ -55,9 +27,23 @@ func WriteLog() bool {
 		}
 	}
 
-	if _, err := f.Write(data); err != nil {
+	if _, err := f.Write(getBytes(kernelOder)); err != nil {
 		return false
 	}
 
 	return true
+}
+
+func getBytes(order *types.KernelOrder) []byte {
+	var buffer bytes.Buffer        // Stand-in for a buffer connection
+	enc := gob.NewEncoder(&buffer) // Will write to buffer.
+	err := enc.Encode(order)
+	if err != nil {
+		return nil
+	}
+	return buffer.Bytes()
+}
+
+func RecoverSince() {
+
 }

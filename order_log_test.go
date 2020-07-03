@@ -18,7 +18,7 @@ func BenchmarkWrite(b *testing.B) {
 }
 
 func TestWrite(t *testing.T) {
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 10000; i++ {
 		if WriteOrderLog(&types.KernelOrder{
 			KernelOrderID: 0,
 			CreateTime:    0,
@@ -34,11 +34,5 @@ func TestWrite(t *testing.T) {
 		}) == false {
 			panic("")
 		}
-	}
-}
-
-func TestWriteLog(t *testing.T) {
-	for i := 0; i < 50000; i++ {
-		WriteLog()
 	}
 }
