@@ -11,7 +11,7 @@ var benchList *SkipList
 
 func init() {
 	// Initialize a big SkipList for the Get() benchmark
-	benchList = New()
+	benchList = NewSkipList()
 
 	for i := 0; i <= 10000000; i++ {
 		benchList.Set(float64(i), [1]byte{})
@@ -63,7 +63,7 @@ func checkSanity(list *SkipList, t *testing.T) {
 func TestBasicIntCRUD(t *testing.T) {
 	var list *SkipList
 
-	list = New()
+	list = NewSkipList()
 
 	list.Set(10, 1)
 	list.Set(60, 2)
@@ -113,7 +113,7 @@ func TestBasicIntCRUD(t *testing.T) {
 
 func TestChangeLevel(t *testing.T) {
 	var i float64
-	list := New()
+	list := NewSkipList()
 
 	if list.maxLevel != DefaultMaxLevel {
 		t.Fatal("max level must equal default max value")
@@ -147,7 +147,7 @@ func TestMaxLevel(t *testing.T) {
 }
 
 func TestChangeProbability(t *testing.T) {
-	list := New()
+	list := NewSkipList()
 
 	if list.probability != DefaultProbability {
 		t.Fatal("new lists should have P value = DefaultProbability")
@@ -160,7 +160,7 @@ func TestChangeProbability(t *testing.T) {
 }
 
 func TestConcurrency(t *testing.T) {
-	list := New()
+	list := NewSkipList()
 
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
@@ -186,7 +186,7 @@ func TestConcurrency(t *testing.T) {
 
 func BenchmarkIncSet(b *testing.B) {
 	b.ReportAllocs()
-	list := New()
+	list := NewSkipList()
 
 	for i := 0; i < b.N; i++ {
 		list.Set(float64(i), [1]byte{})
@@ -209,7 +209,7 @@ func BenchmarkIncGet(b *testing.B) {
 
 func BenchmarkDecSet(b *testing.B) {
 	b.ReportAllocs()
-	list := New()
+	list := NewSkipList()
 
 	for i := b.N; i > 0; i-- {
 		list.Set(float64(i), [1]byte{})
@@ -228,41 +228,4 @@ func BenchmarkDecGet(b *testing.B) {
 	}
 
 	b.SetBytes(int64(b.N))
-}
-
-func TestOrder(t *testing.T) {
-	l := New()
-	l.Set(2, "middle")
-	l.Set(3, "last")
-	l.Set(1, "first")
-	fmt.Println(l.Front().value)
-	l.Remove(l.Front().key)
-	fmt.Println(l.Front().value)
-	l.Remove(l.Front().key)
-	fmt.Println(l.Front().value)
-}
-
-func TestOrder2(t *testing.T) {
-	l := New()
-	l.Set(-2, "middle")
-	l.Set(-3, "last")
-	l.Set(-1, "first")
-
-	for b := l.Front(); b != nil; b = b.Next() {
-		fmt.Println(b.value)
-		l.Remove(b.key)
-	}
-	fmt.Println(l.Length)
-}
-
-func TestOrder3(t *testing.T) {
-	l := New()
-	for i := 0; i < 10000; i++ {
-		l.Set(float64(i), 10000-i)
-	}
-	for b := l.Front(); b != nil; b = b.Next() {
-		fmt.Println(b.value)
-		//l.Remove(b.key)
-	}
-	fmt.Println(l.Length)
 }

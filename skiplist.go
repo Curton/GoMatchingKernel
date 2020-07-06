@@ -169,7 +169,7 @@ func NewWithMaxLevel(maxLevel int) *SkipList {
 	}
 }
 
-// New creates a new skip list with default parameters. Returns a pointer to the new list.
-func New() *SkipList {
+// NewSkipList creates a new skip list with default parameters. Returns a pointer to the new list.
+func NewSkipList() *SkipList {
 	return NewWithMaxLevel(DefaultMaxLevel)
 }
