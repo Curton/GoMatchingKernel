@@ -5,188 +5,195 @@
 
 package exchangeKernel
 
-//import (
-//	"exchangeKernel/types"
-//	"fmt"
-//	"github.com/stretchr/testify/assert"
-//	"math"
-//	"math/rand"
-//	"sync"
-//	"testing"
-//	"time"
-//)
-//
-//func Test_insertPriceCheckedOrder_WithSamePrice(t *testing.T) {
-//	// insert ask & bid order to empty 'ask' & 'bid'
-//	nano := time.Now().UnixNano()
-//	order := types.KernelOrder{
-//		KernelOrderID: 0,
-//		CreateTime:    nano,
-//		UpdateTime:    nano,
-//		Amount:        -70,
-//		Price:         100,
-//		Left:          -10,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	order2 := types.KernelOrder{
-//		KernelOrderID: 0,
-//		CreateTime:    nano,
-//		UpdateTime:    nano,
-//		Amount:        50,
-//		Price:         99,
-//		Left:          20,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	insertCheckedOrder(&order)
-//	insertCheckedOrder(&order)
-//	insertCheckedOrder(&order)
-//	insertCheckedOrder(&order2)
-//	insertCheckedOrder(&order2)
-//	insertCheckedOrder(&order2)
-//	value := ask.Front().Value()
-//	bucket := value.(*priceBucket)
-//	assert.Equal(t, int64(-30), bucket.Left)
-//	assert.Equal(t, 3, bucket.l.Len())
-//	assert.Equal(t, 1, ask.Length)
-//
-//	value2 := bid.Front().Value()
-//	bucket2 := value2.(*priceBucket)
-//	assert.Equal(t, int64(60), bucket2.Left)
-//	assert.Equal(t, 3, bucket2.l.Len())
-//	assert.Equal(t, 1, bid.Length)
-//}
-//
-//// GOMAXPROCS=1 go test -bench=. -run=none -benchtime=1s -benchmem
-//// Benchmark_insertPriceCheckedOrder        6766042               187 ns/op              48 B/op          1 allocs/op
-//func Benchmark_insertPriceCheckedOrder(b *testing.B) {
-//	testSize := 1
-//	if b.N > 1 {
-//		testSize = b.N / 2
-//	}
-//	asks := make([]*types.KernelOrder, 0, testSize)
-//	bids := make([]*types.KernelOrder, 0, testSize)
-//	var askSize int64 = 0
-//	var bidSize int64 = 0
-//	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-//	for i := 0; i < testSize; i++ {
-//		i2 := r.Int63n(int64(100)) + 200
-//		i3 := r.Int63n(int64(100))
-//		order := &types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    0,
-//			UpdateTime:    0,
-//			Amount:        -i3,
-//			Price:         i2,
-//			Left:          -i3,
-//			FilledTotal:   0,
-//			Status:        0,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		asks = append(asks, order)
-//		askSize -= i3
-//	}
-//	for i := 0; i < testSize; i++ {
-//		i2 := r.Int63n(int64(100)) + 99
-//		i3 := r.Int63n(int64(100))
-//		order := &types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    0,
-//			UpdateTime:    0,
-//			Amount:        i3,
-//			Price:         i2,
-//			Left:          i3,
-//			FilledTotal:   0,
-//			Status:        0,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		bids = append(bids, order)
-//		bidSize += i3
-//	}
-//	b.ResetTimer()
-//	for i := range asks {
-//		insertCheckedOrder(asks[i])
-//		insertCheckedOrder(bids[i])
-//	}
-//}
-//
-//func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
-//	testSize := 100_000
-//	asks := make([]*types.KernelOrder, 0, testSize)
-//	bids := make([]*types.KernelOrder, 0, testSize)
-//	var askSize int64 = 0
-//	var bidSize int64 = 0
-//	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-//	for i := 0; i < testSize; i++ {
-//
-//		i2 := r.Int63n(int64(100)) + 200
-//		i3 := r.Int63n(int64(100))
-//		order := &types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    0,
-//			UpdateTime:    0,
-//			Amount:        -i3,
-//			Price:         i2,
-//			Left:          -i3,
-//			FilledTotal:   0,
-//			Status:        0,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		asks = append(asks, order)
-//		askSize -= i3
-//	}
-//	for i := 0; i < testSize; i++ {
-//		i2 := r.Int63n(int64(100)) + 99
-//		i3 := r.Int63n(int64(100))
-//		order := &types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    0,
-//			UpdateTime:    0,
-//			Amount:        i3,
-//			Price:         i2,
-//			Left:          i3,
-//			FilledTotal:   0,
-//			Status:        0,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		bids = append(bids, order)
-//		bidSize += i3
-//	}
-//
-//	for i := range asks {
-//		insertCheckedOrder(asks[i])
-//		insertCheckedOrder(bids[i])
-//	}
-//
-//	var checkAskSize int64 = 0
-//	var checkBidSize int64 = 0
-//	for i := ask.Front(); i != nil; i = i.Next() {
-//		bucket := i.Value().(*priceBucket)
-//		checkAskSize += bucket.Left
-//	}
-//	for i := bid.Front(); i != nil; i = i.Next() {
-//		bucket := i.Value().(*priceBucket)
-//		checkBidSize += bucket.Left
-//	}
-//	assert.Equal(t, askSize, checkAskSize)
-//	assert.Equal(t, bidSize, checkBidSize)
-//}
-//
+import (
+	"exchangeKernel/types"
+	_ "fmt"
+	"github.com/stretchr/testify/assert"
+	_ "math"
+	"math/rand"
+	_ "math/rand"
+	"sync"
+	_ "sync"
+	"testing"
+	"time"
+)
+
+func Test_insertPriceCheckedOrder_WithSamePrice(t *testing.T) {
+	k := NewKernel()
+	// insert ask & bid order to empty 'ask' & 'bid'
+	nano := time.Now().UnixNano()
+	order := types.KernelOrder{
+		KernelOrderID: 0,
+		CreateTime:    nano,
+		UpdateTime:    nano,
+		Amount:        -70,
+		Price:         100,
+		Left:          -10,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	order2 := types.KernelOrder{
+		KernelOrderID: 0,
+		CreateTime:    nano,
+		UpdateTime:    nano,
+		Amount:        50,
+		Price:         99,
+		Left:          20,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	k.insertCheckedOrder(&order)
+	k.insertCheckedOrder(&order)
+	k.insertCheckedOrder(&order)
+	k.insertCheckedOrder(&order2)
+	k.insertCheckedOrder(&order2)
+	k.insertCheckedOrder(&order2)
+
+	value := k.ask.Front().Value()
+	bucket := value.(*priceBucket)
+	assert.Equal(t, int64(-30), bucket.Left)
+	assert.Equal(t, 3, bucket.l.Len())
+	assert.Equal(t, 1, k.ask.Length)
+
+	value2 := k.bid.Front().Value()
+	bucket2 := value2.(*priceBucket)
+	assert.Equal(t, int64(60), bucket2.Left)
+	assert.Equal(t, 3, bucket2.l.Len())
+	assert.Equal(t, 1, k.bid.Length)
+}
+
+//GOMAXPROCS=1 go test -bench=. -run=none -benchtime=1s -benchmem
+//Benchmark_insertPriceCheckedOrder        6766042               187 ns/op              48 B/op          1 allocs/op
+func Benchmark_insertPriceCheckedOrder(b *testing.B) {
+	b.ReportAllocs()
+	k := NewKernel()
+	testSize := 1
+	if b.N > 1 {
+		testSize = b.N / 2
+	}
+	asks := make([]*types.KernelOrder, 0, testSize)
+	bids := make([]*types.KernelOrder, 0, testSize)
+	var askSize int64 = 0
+	var bidSize int64 = 0
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < testSize; i++ {
+		i2 := r.Int63n(int64(100)) + 200
+		i3 := r.Int63n(int64(100))
+		order := &types.KernelOrder{
+			KernelOrderID: 0,
+			CreateTime:    0,
+			UpdateTime:    0,
+			Amount:        -i3,
+			Price:         i2,
+			Left:          -i3,
+			FilledTotal:   0,
+			Status:        0,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		asks = append(asks, order)
+		askSize -= i3
+	}
+	for i := 0; i < testSize; i++ {
+		i2 := r.Int63n(int64(100)) + 99
+		i3 := r.Int63n(int64(100))
+		order := &types.KernelOrder{
+			KernelOrderID: 0,
+			CreateTime:    0,
+			UpdateTime:    0,
+			Amount:        i3,
+			Price:         i2,
+			Left:          i3,
+			FilledTotal:   0,
+			Status:        0,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		bids = append(bids, order)
+		bidSize += i3
+	}
+	b.ResetTimer()
+	for i := range asks {
+		k.insertCheckedOrder(asks[i])
+		k.insertCheckedOrder(bids[i])
+	}
+}
+
+func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
+	k := NewKernel()
+	testSize := 1_000_000
+	asks := make([]*types.KernelOrder, 0, testSize)
+	bids := make([]*types.KernelOrder, 0, testSize)
+	var askSize int64 = 0
+	var bidSize int64 = 0
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < testSize; i++ {
+
+		i2 := r.Int63n(int64(100)) + 200
+		i3 := r.Int63n(int64(100))
+		order := &types.KernelOrder{
+			KernelOrderID: 0,
+			CreateTime:    0,
+			UpdateTime:    0,
+			Amount:        -i3,
+			Price:         i2,
+			Left:          -i3,
+			FilledTotal:   0,
+			Status:        0,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		asks = append(asks, order)
+		askSize -= i3
+	}
+	for i := 0; i < testSize; i++ {
+		i2 := r.Int63n(int64(100)) + 99
+		i3 := r.Int63n(int64(100))
+		order := &types.KernelOrder{
+			KernelOrderID: 0,
+			CreateTime:    0,
+			UpdateTime:    0,
+			Amount:        i3,
+			Price:         i2,
+			Left:          i3,
+			FilledTotal:   0,
+			Status:        0,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		bids = append(bids, order)
+		bidSize += i3
+	}
+
+	for i := range asks {
+		k.insertCheckedOrder(asks[i])
+		k.insertCheckedOrder(bids[i])
+	}
+
+	var checkAskSize int64 = 0
+	var checkBidSize int64 = 0
+	for i := k.ask.Front(); i != nil; i = i.Next() {
+		bucket := i.Value().(*priceBucket)
+		checkAskSize += bucket.Left
+	}
+	for i := k.bid.Front(); i != nil; i = i.Next() {
+		bucket := i.Value().(*priceBucket)
+		checkBidSize += bucket.Left
+	}
+	assert.Equal(t, askSize, checkAskSize)
+	assert.Equal(t, bidSize, checkBidSize)
+}
+
 //// 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个同价格且同数量订单, 匹配完成后ask/bid全空
 //func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 //	// bid
@@ -218,7 +225,7 @@ package exchangeKernel
 //		Id:            0,
 //	}
 //
-//	go orderAcceptor()
+//	go startOrderAcceptor()
 //	orderChan <- order
 //	orderChan <- order2
 //
@@ -296,7 +303,7 @@ package exchangeKernel
 //		Id:            0,
 //	}
 //
-//	go orderAcceptor()
+//	go startOrderAcceptor()
 //	orderChan <- order
 //	orderChan <- order2
 //
@@ -374,7 +381,7 @@ package exchangeKernel
 //		Id:            0,
 //	}
 //
-//	go orderAcceptor()
+//	go startOrderAcceptor()
 //	orderChan <- order
 //	orderChan <- order2
 //
@@ -452,7 +459,7 @@ package exchangeKernel
 //		Id:            0,
 //	}
 //
-//	go orderAcceptor()
+//	go startOrderAcceptor()
 //	orderChan <- order
 //	orderChan <- order2
 //
@@ -530,7 +537,7 @@ package exchangeKernel
 //		Id:            0,
 //	}
 //
-//	go orderAcceptor()
+//	go startOrderAcceptor()
 //	orderChan <- order
 //	orderChan <- order2
 //
@@ -614,7 +621,7 @@ package exchangeKernel
 //		Id:            0,
 //	}
 //
-//	go orderAcceptor()
+//	go startOrderAcceptor()
 //	orderChan <- order
 //	orderChan <- order2
 //
@@ -726,7 +733,7 @@ package exchangeKernel
 //		Id:            0,
 //	}
 //
-//	go orderAcceptor()
+//	go startOrderAcceptor()
 //	orderChan <- order
 //	orderChan <- order2
 //	orderChan <- order3
@@ -820,7 +827,7 @@ package exchangeKernel
 //		askSize -= i3
 //	}
 //
-//	go orderAcceptor()
+//	go startOrderAcceptor()
 //
 //	takerVolumeMap := make(map[uint64]int64)
 //	makerVolumeMap := make(map[uint64]int64)
@@ -912,187 +919,188 @@ package exchangeKernel
 //	//fmt.Println("askSize : ", askSize)
 //}
 //
-//// 100_000个随机订单, 50_000(bid) & 50_000(ask)
-//func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
-//	testSize := 12_500 // * 8
-//	asks := make([]*types.KernelOrder, 0, testSize)
-//	bids := make([]*types.KernelOrder, 0, testSize)
-//	var askSize int64 = 0
-//	var bidSize int64 = 0
-//	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-//	for i := 0; i < testSize; i++ {
-//		// 1 - 1000
-//		i2 := r.Int63n(int64(1000)) + 1
-//		// 1 - 100
-//		i3 := r.Int63n(int64(100)) + 1
-//		order := &types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    0,
-//			UpdateTime:    0,
-//			Amount:        -i3,
-//			Price:         i2,
-//			Left:          -i3,
-//			FilledTotal:   0,
-//			Status:        0,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		asks = append(asks, order)
-//		askSize -= i3
-//	}
-//	r = rand.New(rand.NewSource(time.Now().UnixNano()))
-//	for i := 0; i < testSize; i++ {
-//		i2 := r.Int63n(int64(1000)) + 1
-//		i3 := r.Int63n(int64(100)) + 1
-//		order := &types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    0,
-//			UpdateTime:    0,
-//			Amount:        i3,
-//			Price:         i2,
-//			Left:          i3,
-//			FilledTotal:   0,
-//			Status:        0,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		bids = append(bids, order)
-//		bidSize += i3
-//	}
-//
-//	go orderAcceptor()
-//
-//	//takerOrderSizeMap := make(map[uint64]int64)
-//	//makerOrderSizeMap := make(map[uint64]int64)
-//	orderVolumeMap := make(map[uint64]int64)
-//	//mux0 := sync.RWMutex{}
-//	//mux1 := sync.RWMutex{}
-//
-//	go func() {
-//		for {
-//			info := <-matchingInfoChan
-//			order := info.takerOrder
-//			i, ok := orderVolumeMap[order.KernelOrderID]
-//			if ok {
-//				if i < 0 && i > order.Amount-order.Left {
-//					orderVolumeMap[order.KernelOrderID] = order.Amount - order.Left
-//				} else if i > 0 && i < order.Amount-order.Left {
-//					orderVolumeMap[order.KernelOrderID] = order.Amount - order.Left
-//				}
-//			} else {
-//				orderVolumeMap[order.KernelOrderID] = order.Amount - order.Left
-//			}
-//
-//			orders := info.makerOrders
-//			for i2 := range orders {
-//				i3, ok := orderVolumeMap[orders[i2].KernelOrderID]
-//				if ok {
-//					if i3 < 0 && i3 > orders[i2].Amount-orders[i2].Left {
-//						orderVolumeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
-//					} else if i3 > 0 && i3 < orders[i2].Amount-orders[i2].Left {
-//						orderVolumeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
-//					}
-//				} else {
-//					orderVolumeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
-//				}
-//			}
-//			var checkSum int64 = 0
-//			for _, v := range info.matchedSizeMap {
-//				assert.NotEqual(t, int64(0), v)
-//				checkSum += v
-//			}
-//			assert.Equal(t, int64(0), checkSum)
-//		}
-//	}()
-//
-//	done := make(chan bool)
-//	start := time.Now().UnixNano()
-//	go func() {
-//		for i := range asks {
-//			orderChan <- asks[i]
-//			orderChan <- bids[i]
-//
-//			orderChan <- bids[i]
-//			orderChan <- asks[i]
-//
-//			orderChan <- bids[i]
-//			orderChan <- asks[i]
-//
-//			orderChan <- asks[i]
-//			orderChan <- bids[i]
-//			if i == testSize-1 {
-//				done <- true
-//			}
-//		}
-//	}()
-//
-//	// 等待订单处理完毕, 开始审计
-//	for b := range done {
-//		if b == true {
-//			// wait all matching finished
-//			println(8*testSize, "orders done in ", (time.Now().UnixNano()-start)/(1000*1000), " ms")
-//			time.Sleep(time.Second)
-//			break
-//		}
-//	}
-//
-//	wg := sync.WaitGroup{}
-//	var askLeftCalFromBucketLeft int64 = 0
-//	wg.Add(1)
-//	go func() {
-//		defer wg.Done()
-//		for bucket := ask.Front(); bucket != nil; bucket = bucket.Next() {
-//			askLeftCalFromBucketLeft += bucket.value.(*priceBucket).Left
-//		}
-//	}()
-//	var askLeftCalFromList int64 = 0
-//	wg.Add(1)
-//	go func() {
-//		defer wg.Done()
-//		for bucket := ask.Front(); bucket != nil; bucket = bucket.Next() {
-//			l := bucket.value.(*priceBucket).l
-//			for i := l.Front(); i != nil; i = i.Next() {
-//				askLeftCalFromList += i.Value.(*types.KernelOrder).Left
-//			}
-//		}
-//	}()
-//
-//	var bidLeftCalFromBucketLeft int64 = 0
-//	wg.Add(1)
-//	go func() {
-//		defer wg.Done()
-//		for bucket := bid.Front(); bucket != nil; bucket = bucket.Next() {
-//			bidLeftCalFromBucketLeft += bucket.value.(*priceBucket).Left
-//		}
-//	}()
-//
-//	var bidLeftCalFromList int64 = 0
-//	wg.Add(1)
-//	go func() {
-//		defer wg.Done()
-//		for bucket := bid.Front(); bucket != nil; bucket = bucket.Next() {
-//			l := bucket.value.(*priceBucket).l
-//			for i := l.Front(); i != nil; i = i.Next() {
-//				bidLeftCalFromList += i.Value.(*types.KernelOrder).Left
-//			}
-//		}
-//	}()
-//
-//	wg.Wait()
-//
-//	assert.Equal(t, askLeftCalFromBucketLeft, askLeftCalFromList)
-//	assert.Equal(t, bidLeftCalFromBucketLeft, bidLeftCalFromList)
-//
-//	var askSum int64 = 0
-//	var bidSum int64 = 0
-//	for _, v := range orderVolumeMap {
-//		if v < 0 {
-//			askSum += v
-//		} else {
-//			bidSum += v
-//		}
-//	}
-//	assert.Equal(t, askSum, -bidSum)
-//}
+// 100_000个随机订单, 50_000(bid) & 50_000(ask)
+func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
+	testSize := 12_500 // * 8
+	asks := make([]*types.KernelOrder, 0, testSize)
+	bids := make([]*types.KernelOrder, 0, testSize)
+	var askSize int64 = 0
+	var bidSize int64 = 0
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < testSize; i++ {
+		// 1 - 1000
+		i2 := r.Int63n(int64(1000)) + 1
+		// 1 - 100
+		i3 := r.Int63n(int64(100)) + 1
+		order := &types.KernelOrder{
+			KernelOrderID: 0,
+			CreateTime:    0,
+			UpdateTime:    0,
+			Amount:        -i3,
+			Price:         i2,
+			Left:          -i3,
+			FilledTotal:   0,
+			Status:        0,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		asks = append(asks, order)
+		askSize -= i3
+	}
+	r = rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < testSize; i++ {
+		i2 := r.Int63n(int64(1000)) + 1
+		i3 := r.Int63n(int64(100)) + 1
+		order := &types.KernelOrder{
+			KernelOrderID: 0,
+			CreateTime:    0,
+			UpdateTime:    0,
+			Amount:        i3,
+			Price:         i2,
+			Left:          i3,
+			FilledTotal:   0,
+			Status:        0,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		bids = append(bids, order)
+		bidSize += i3
+	}
+
+	acceptor := initAcceptor(1, "test")
+	go acceptor.startOrderAcceptor()
+
+	//takerOrderSizeMap := make(map[uint64]int64)
+	//makerOrderSizeMap := make(map[uint64]int64)
+	orderVolumeMap := make(map[uint64]int64)
+	//mux0 := sync.RWMutex{}
+	//mux1 := sync.RWMutex{}
+
+	go func() {
+		for {
+			info := <-acceptor.kernel.matchedInfoChan
+			order := info.takerOrder
+			i, ok := orderVolumeMap[order.KernelOrderID]
+			if ok {
+				if i < 0 && i > order.Amount-order.Left {
+					orderVolumeMap[order.KernelOrderID] = order.Amount - order.Left
+				} else if i > 0 && i < order.Amount-order.Left {
+					orderVolumeMap[order.KernelOrderID] = order.Amount - order.Left
+				}
+			} else {
+				orderVolumeMap[order.KernelOrderID] = order.Amount - order.Left
+			}
+
+			orders := info.makerOrders
+			for i2 := range orders {
+				i3, ok := orderVolumeMap[orders[i2].KernelOrderID]
+				if ok {
+					if i3 < 0 && i3 > orders[i2].Amount-orders[i2].Left {
+						orderVolumeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
+					} else if i3 > 0 && i3 < orders[i2].Amount-orders[i2].Left {
+						orderVolumeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
+					}
+				} else {
+					orderVolumeMap[orders[i2].KernelOrderID] = orders[i2].Amount - orders[i2].Left
+				}
+			}
+			var checkSum int64 = 0
+			for _, v := range info.matchedSizeMap {
+				assert.NotEqual(t, int64(0), v)
+				checkSum += v
+			}
+			assert.Equal(t, int64(0), checkSum)
+		}
+	}()
+
+	done := make(chan bool)
+	start := time.Now().UnixNano()
+	go func() {
+		for i := range asks {
+			acceptor.newOrderChan <- asks[i]
+			acceptor.newOrderChan <- bids[i]
+
+			acceptor.newOrderChan <- bids[i]
+			acceptor.newOrderChan <- asks[i]
+
+			acceptor.newOrderChan <- bids[i]
+			acceptor.newOrderChan <- asks[i]
+
+			acceptor.newOrderChan <- asks[i]
+			acceptor.newOrderChan <- bids[i]
+			if i == testSize-1 {
+				done <- true
+			}
+		}
+	}()
+
+	// 等待订单处理完毕, 开始审计
+	for b := range done {
+		if b == true {
+			// wait all matching finished
+			println(8*testSize, "orders done in ", (time.Now().UnixNano()-start)/(1000*1000), " ms")
+			time.Sleep(time.Second)
+			break
+		}
+	}
+
+	wg := sync.WaitGroup{}
+	var askLeftCalFromBucketLeft int64 = 0
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for bucket := acceptor.kernel.ask.Front(); bucket != nil; bucket = bucket.Next() {
+			askLeftCalFromBucketLeft += bucket.value.(*priceBucket).Left
+		}
+	}()
+	var askLeftCalFromList int64 = 0
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for bucket := acceptor.kernel.ask.Front(); bucket != nil; bucket = bucket.Next() {
+			l := bucket.value.(*priceBucket).l
+			for i := l.Front(); i != nil; i = i.Next() {
+				askLeftCalFromList += i.Value.(*types.KernelOrder).Left
+			}
+		}
+	}()
+
+	var bidLeftCalFromBucketLeft int64 = 0
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for bucket := acceptor.kernel.bid.Front(); bucket != nil; bucket = bucket.Next() {
+			bidLeftCalFromBucketLeft += bucket.value.(*priceBucket).Left
+		}
+	}()
+
+	var bidLeftCalFromList int64 = 0
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for bucket := acceptor.kernel.bid.Front(); bucket != nil; bucket = bucket.Next() {
+			l := bucket.value.(*priceBucket).l
+			for i := l.Front(); i != nil; i = i.Next() {
+				bidLeftCalFromList += i.Value.(*types.KernelOrder).Left
+			}
+		}
+	}()
+
+	wg.Wait()
+
+	assert.Equal(t, askLeftCalFromBucketLeft, askLeftCalFromList)
+	assert.Equal(t, bidLeftCalFromBucketLeft, bidLeftCalFromList)
+
+	var askSum int64 = 0
+	var bidSum int64 = 0
+	for _, v := range orderVolumeMap {
+		if v < 0 {
+			askSum += v
+		} else {
+			bidSum += v
+		}
+	}
+	assert.Equal(t, askSum, -bidSum)
+}
