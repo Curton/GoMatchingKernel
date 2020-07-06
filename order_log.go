@@ -20,7 +20,7 @@ func writeOrderLog(kernelOder *types.KernelOrder) bool {
 
 	if f == nil {
 		var err error
-		f, err = os.OpenFile(strconv.FormatInt(time.Now().Unix(), 10)+".log",
+		f, err = os.OpenFile("orders_"+strconv.FormatInt(time.Now().Unix(), 10)+".log",
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644)
 		if err != nil {
 			return false

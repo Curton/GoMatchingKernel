@@ -11,16 +11,6 @@ import (
 	"time"
 )
 
-//var (
-//	orderChan = make(chan *types.KernelOrder)
-//	//writeLogChan        = make(chan *types.KernelOrder)
-//	//writeLogConfirmChan = make(chan bool)
-//	//orderBuff = make([]*types.KernelOrder, 0, 8)
-//	serverId   uint16 = 1
-//	serverMask        = uint64(serverId) << (64 - 16 - 1)
-//	r                 = rand.New(rand.NewSource(time.Now().UnixNano()))
-//)
-
 type scheduler struct {
 	kernel              *kernel
 	newOrderChan        chan *types.KernelOrder
@@ -30,7 +20,7 @@ type scheduler struct {
 	acceptorDescription string
 }
 
-// run in go routine
+// should run in go routine
 // 判断 限价单 与 市价单
 func (s *scheduler) startOrderAcceptor() {
 	//go logAcceptor()
@@ -41,10 +31,13 @@ func (s *scheduler) startOrderAcceptor() {
 		kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | s.serverMask // use the first 16 bits as server Id
 		// write log
 		writeOrderLog(&kernelOrder)
-		//writeLogChan <- &kernelOrder
-		//<- writeLogConfirmChan
+		// cancel order
+		if kernelOrder.Amount == 0 {
+
+		}
+
 		if kernelOrder.Type == types.LIMIT {
-			// 限价单
+			// limit order, 限价单
 			if kernelOrder.Amount > 0 {
 				// bid order
 				if kernelOrder.Price < s.kernel.ask1Price {
@@ -72,18 +65,10 @@ func (s *scheduler) startOrderAcceptor() {
 func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 	return &scheduler{
 		kernel:              NewKernel(),
-		newOrderChan:        make(chan *types.KernelOrder),
+		newOrderChan:        make(chan *types.KernelOrder, 1<<10),
 		serverId:            serverId,
-		serverMask:          uint64(serverId) << (64 - 16 - 1),
+		serverMask:          serverId << (64 - 16 - 1),
 		r:                   rand.New(rand.NewSource(time.Now().UnixNano())),
 		acceptorDescription: acceptorDescription,
 	}
 }
-
-//
-//func logAcceptor() {
-//	for order := range writeLogChan {
-//		writeOrderLog(order)
-//		writeLogConfirmChan <- true
-//	}
-//}

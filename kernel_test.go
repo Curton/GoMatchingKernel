@@ -9,6 +9,7 @@ import (
 	"exchangeKernel/types"
 	_ "fmt"
 	"github.com/stretchr/testify/assert"
+	"math"
 	_ "math"
 	"math/rand"
 	_ "math/rand"
@@ -194,84 +195,85 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 	assert.Equal(t, bidSize, checkBidSize)
 }
 
-//// 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个同价格且同数量订单, 匹配完成后ask/bid全空
-//func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
-//	// bid
-//	order := &types.KernelOrder{
-//		KernelOrderID: 0,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        100,
-//		Price:         200,
-//		Left:          100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	// ask
-//	order2 := &types.KernelOrder{
-//		KernelOrderID: 1,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        -100,
-//		Price:         200,
-//		Left:          -100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//
-//	go startOrderAcceptor()
-//	orderChan <- order
-//	orderChan <- order2
-//
-//	i := 0
-//	for info := range matchingInfoChan {
-//		forCheck1 := types.KernelOrder{
-//			KernelOrderID: info.makerOrders[0].KernelOrderID,
-//			CreateTime:    info.makerOrders[0].CreateTime,
-//			UpdateTime:    info.makerOrders[0].UpdateTime,
-//			Amount:        100,
-//			Price:         200,
-//			Left:          0,
-//			FilledTotal:   20000,
-//			Status:        types.CLOSED,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		forCheck2 := types.KernelOrder{
-//			KernelOrderID: info.takerOrder.KernelOrderID,
-//			CreateTime:    info.takerOrder.CreateTime,
-//			UpdateTime:    info.takerOrder.UpdateTime,
-//			Amount:        -100,
-//			Price:         200,
-//			Left:          0,
-//			FilledTotal:   -20000,
-//			Status:        types.CLOSED,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		assert.Equal(t, forCheck1, info.makerOrders[0])
-//		assert.Equal(t, forCheck2, info.takerOrder)
-//		i++
-//		if i == 1 {
-//			break
-//		}
-//	}
-//	time.Sleep(100 * time.Millisecond)
-//	assert.Equal(t, int64(math.MaxInt64), ask1Price)
-//	assert.Equal(t, int64(math.MinInt64), bid1Price)
-//	assert.Equal(t, 0, ask.Length)
-//	assert.Equal(t, 0, bid.Length)
-//	close(orderChan)
-//}
-//
+// 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个同价格且同数量订单, 匹配完成后ask/bid全空
+func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
+	// bid
+	order := &types.KernelOrder{
+		KernelOrderID: 0,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        100,
+		Price:         200,
+		Left:          100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	// ask
+	order2 := &types.KernelOrder{
+		KernelOrderID: 1,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        -100,
+		Price:         200,
+		Left:          -100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+
+	acceptor := initAcceptor(1, "test")
+	go acceptor.startOrderAcceptor()
+
+	acceptor.newOrderChan <- order
+	acceptor.newOrderChan <- order2
+
+	i := 0
+	for info := range acceptor.kernel.matchedInfoChan {
+		forCheck1 := types.KernelOrder{
+			KernelOrderID: info.makerOrders[0].KernelOrderID,
+			CreateTime:    info.makerOrders[0].CreateTime,
+			UpdateTime:    info.makerOrders[0].UpdateTime,
+			Amount:        100,
+			Price:         200,
+			Left:          0,
+			FilledTotal:   20000,
+			Status:        types.CLOSED,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		forCheck2 := types.KernelOrder{
+			KernelOrderID: info.takerOrder.KernelOrderID,
+			CreateTime:    info.takerOrder.CreateTime,
+			UpdateTime:    info.takerOrder.UpdateTime,
+			Amount:        -100,
+			Price:         200,
+			Left:          0,
+			FilledTotal:   -20000,
+			Status:        types.CLOSED,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		assert.Equal(t, forCheck1, info.makerOrders[0])
+		assert.Equal(t, forCheck2, info.takerOrder)
+		i++
+		if i == 1 {
+			break
+		}
+	}
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
+	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
+	assert.Equal(t, 0, acceptor.kernel.ask.Length)
+	assert.Equal(t, 0, acceptor.kernel.bid.Length)
+}
+
 //// 卖单(ask)列表只有一个订单, 买单(bid)匹配到一个同价格且同数量订单, 匹配完成后ask/bid全空
 //func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 //	// ask
