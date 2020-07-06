@@ -26,8 +26,8 @@ type kernel struct {
 
 type matchedInfo struct {
 	makerOrders    []types.KernelOrder
-	takerOrder     types.KernelOrder
 	matchedSizeMap map[uint64]int64
+	takerOrder     types.KernelOrder
 }
 
 type KernelErr error
