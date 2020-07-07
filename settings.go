@@ -4,3 +4,7 @@
  */
 
 package exchangeKernel
+
+var (
+	kernelOrderLogPath = "./kernelorder_log/"
+)

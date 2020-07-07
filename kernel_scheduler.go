@@ -8,6 +8,7 @@ package exchangeKernel
 import (
 	"exchangeKernel/types"
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -18,6 +19,8 @@ type scheduler struct {
 	serverMask          uint64
 	r                   *rand.Rand
 	acceptorDescription string
+	f                   *os.File // kernelOrder logger file
+	//running             bool
 }
 
 // should run in go routine
@@ -30,7 +33,7 @@ func (s *scheduler) startOrderAcceptor() {
 		uint64R := uint64(s.r.Int63())
 		kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | s.serverMask // use the first 16 bits as server Id
 		// write log
-		writeOrderLog(&kernelOrder)
+		writeOrderLog(s.f, s.acceptorDescription, &kernelOrder)
 		// cancel order
 		if kernelOrder.Amount == 0 {
 

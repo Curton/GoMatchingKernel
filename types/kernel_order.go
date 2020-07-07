@@ -28,7 +28,7 @@ const (
 	One int64 = 1_000_000_000
 )
 
-// 80 bytes
+// 72 bytes
 type KernelOrder struct {
 	// Exchange Kernel KernelOrder ID
 	KernelOrderID uint64 `json:"kernel_order_id,omitempty"`
