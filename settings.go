@@ -6,5 +6,6 @@
 package exchangeKernel
 
 var (
-	kernelOrderLogPath = "./kernelorder_log/"
+	kernelOrderLogPath  = "./kernelorder_log/"
+	kernelOrderLogCache = true
 )

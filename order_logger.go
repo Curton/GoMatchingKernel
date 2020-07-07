@@ -16,19 +16,59 @@ import (
 	"time"
 )
 
-func writeOrderLog(f *os.File, acceptorDescription string, kernelOder *types.KernelOrder) bool {
+var (
+	cachedOrderMap = make(map[string]types.KernelOrder)
+	lastTimeMap    = make(map[string]int64)
+)
 
-	if f == nil {
+func writeOrderLog(f *[1]*os.File, acceptorDescription string, kernelOder *types.KernelOrder) bool {
+
+	if f[0] == nil {
 		var err error
-		f, err = os.OpenFile(kernelOrderLogPath+acceptorDescription+"_"+strconv.FormatInt(time.Now().Unix(), 10)+".log",
+		var f2 *os.File
+		f2, err = os.OpenFile(kernelOrderLogPath+acceptorDescription+"_"+strconv.FormatInt(time.Now().Unix(), 10)+".log",
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644)
 		if err != nil {
 			return false
 		}
+		f[0] = f2
 	}
 
-	if _, err := f.Write(getBytes(kernelOder)); err != nil {
-		return false
+	if kernelOrderLogCache {
+		cachedOrder, ok := cachedOrderMap[acceptorDescription]
+		if ok {
+			b1 := getBytes(&cachedOrder)
+			b2 := getBytes(kernelOder)
+			buf := make([]byte, 0, len(b1)+len(b2))
+			buf = append(buf, b1...)
+			buf = append(buf, b2...)
+			if _, err := f[0].Write(buf); err != nil {
+				return false
+			}
+			delete(cachedOrderMap, acceptorDescription)
+		} else {
+			i, ok := lastTimeMap[acceptorDescription]
+			if ok {
+				if kernelOder.CreateTime-i <= 100_000 {
+					lastTimeMap[acceptorDescription] = kernelOder.CreateTime
+					cachedOrderMap[acceptorDescription] = *kernelOder
+					return true
+				} else {
+					if _, err := f[0].Write(getBytes(kernelOder)); err != nil {
+						return false
+					}
+				}
+			} else {
+				lastTimeMap[acceptorDescription] = kernelOder.CreateTime
+				if _, err := f[0].Write(getBytes(kernelOder)); err != nil {
+					return false
+				}
+			}
+		}
+	} else {
+		if _, err := f[0].Write(getBytes(kernelOder)); err != nil {
+			return false
+		}
 	}
 
 	return true

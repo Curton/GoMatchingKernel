@@ -19,7 +19,7 @@ type scheduler struct {
 	serverMask          uint64
 	r                   *rand.Rand
 	acceptorDescription string
-	f                   *os.File // kernelOrder logger file
+	f                   *[1]*os.File // kernelOrder logger file
 	//running             bool
 }
 
@@ -73,5 +73,6 @@ func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 		serverMask:          serverId << (64 - 16 - 1),
 		r:                   rand.New(rand.NewSource(time.Now().UnixNano())),
 		acceptorDescription: acceptorDescription,
+		f:                   &[1]*os.File{nil},
 	}
 }

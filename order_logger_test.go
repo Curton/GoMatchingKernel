@@ -9,13 +9,15 @@ import (
 	"container/list"
 	"exchangeKernel/types"
 	"fmt"
+	"os"
 	"testing"
 )
 
 // GOMAXPROCS=1 go test -bench=BenchmarkWrite -run=none -benchtime=1s -benchmem
 func BenchmarkWrite(b *testing.B) {
+	var f *[1]*os.File = &[1]*os.File{nil}
 	for i := 0; i < b.N; i++ {
-		writeOrderLog(nil, "test", &types.KernelOrder{
+		writeOrderLog(f, "test", &types.KernelOrder{
 			KernelOrderID: 0,
 			CreateTime:    0,
 			UpdateTime:    0,
@@ -32,8 +34,9 @@ func BenchmarkWrite(b *testing.B) {
 }
 
 func TestWrite(t *testing.T) {
+	var f *[1]*os.File = &[1]*os.File{nil}
 	for i := 0; i < 10000; i++ {
-		if writeOrderLog(nil, "test", &types.KernelOrder{
+		if writeOrderLog(f, "test", &types.KernelOrder{
 			KernelOrderID: 0,
 			CreateTime:    0,
 			UpdateTime:    0,
