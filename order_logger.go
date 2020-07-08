@@ -49,7 +49,7 @@ func writeOrderLog(f *[1]*os.File, acceptorDescription string, kernelOder *types
 		} else {
 			i, ok := lastTimeMap[acceptorDescription]
 			if ok {
-				if kernelOder.CreateTime-i <= 100_000 {
+				if kernelOder.CreateTime-i < 3_000_000 {
 					lastTimeMap[acceptorDescription] = kernelOder.CreateTime
 					cachedOrderMap[acceptorDescription] = *kernelOder
 					return true
