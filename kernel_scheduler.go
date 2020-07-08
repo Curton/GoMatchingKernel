@@ -76,3 +76,15 @@ func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 		f:                   &[1]*os.File{nil},
 	}
 }
+
+func restoreAccept(serverId uint64, acceptorDescription string) *scheduler {
+	return &scheduler{
+		kernel:              NewKernel(),
+		newOrderChan:        make(chan *types.KernelOrder, 1<<10),
+		serverId:            serverId,
+		serverMask:          serverId << (64 - 16 - 1),
+		r:                   rand.New(rand.NewSource(time.Now().UnixNano())),
+		acceptorDescription: acceptorDescription,
+		f:                   &[1]*os.File{nil},
+	}
+}

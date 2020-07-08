@@ -8,6 +8,8 @@ package exchangeKernel
 import (
 	"container/list"
 	"exchangeKernel/types"
+	"io/ioutil"
+	"log"
 	"math"
 	"os"
 	"strconv"
@@ -58,28 +60,57 @@ type orderBookItem struct {
 func (k *kernel) takeSnapshot(description string) {
 	uTime := time.Now().Unix()
 	uTimeFmt := strconv.FormatInt(uTime, 10)
+	askBasePath := kernelSnapshotPath + description + "/" + uTimeFmt + "/ask/"
+	bidBasePath := kernelSnapshotPath + description + "/" + uTimeFmt + "/bid/"
+	//syscall.Umask(0)
+	_ = os.MkdirAll(askBasePath, 0755)
+	_ = os.MkdirAll(bidBasePath, 0755)
 
-	for bucket := k.ask.Front(); bucket != nil; bucket = bucket.Next() {
-		pb := bucket.value.(*priceBucket)
-		order := pb.l.Front().Value.(*types.KernelOrder)
-		price := order.Price
-		f, _ := os.OpenFile(kernelSnapshotPath+description+"/"+uTimeFmt+"/ask/"+strconv.FormatInt(price, 10)+".list",
-			os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644)
-		bytes := kernelOrderListToBytes(pb.l)
-		_, _ = f.Write(bytes)
-		_ = f.Close()
-	}
+	wg := sync.WaitGroup{}
 
-	for bucket := k.bid.Front(); bucket != nil; bucket = bucket.Next() {
-		pb := bucket.value.(*priceBucket)
-		order := pb.l.Front().Value.(*types.KernelOrder)
-		price := order.Price
-		f, _ := os.OpenFile(kernelSnapshotPath+description+"/"+uTimeFmt+"/bid/"+strconv.FormatInt(price, 10)+".list",
-			os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644)
-		bytes := kernelOrderListToBytes(pb.l)
-		_, _ = f.Write(bytes)
-		_ = f.Close()
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for bucket := k.ask.Front(); bucket != nil; bucket = bucket.Next() {
+			pb := bucket.value.(*priceBucket)
+			order := pb.l.Front().Value.(*types.KernelOrder)
+			price := order.Price
+			path := askBasePath + strconv.FormatInt(price, 10) + ".list"
+			f, err := os.OpenFile(path, os.O_EXCL|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				panic(err.Error())
+			}
+			bytes := kernelOrderListToBytes(pb.l)
+			_, err = f.Write(bytes)
+			if err != nil {
+				panic(err.Error())
+			}
+			err = f.Close()
+			if err != nil {
+				panic(err.Error())
+			}
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for bucket := k.bid.Front(); bucket != nil; bucket = bucket.Next() {
+			pb := bucket.value.(*priceBucket)
+			order := pb.l.Front().Value.(*types.KernelOrder)
+			price := order.Price
+			path := bidBasePath + strconv.FormatInt(price, 10) + ".list"
+			f, _ := os.OpenFile(path, os.O_EXCL|os.O_CREATE|os.O_WRONLY, 0644)
+			bytes := kernelOrderListToBytes(pb.l)
+			_, _ = f.Write(bytes)
+			_ = f.Close()
+		}
+	}()
+
+	wg.Wait()
+	f, _ := os.OpenFile(kernelSnapshotPath+description+"/"+uTimeFmt+"/finished.log", os.O_EXCL|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644)
+	_, _ = f.WriteString("If you see this file, it means snapshot is completed.")
+	_ = f.Close()
 }
 
 // after price & amount checked, 附条件异步, (不同价格)的(不可成交)订单可以同时插入, 以上两个条件需同时满足
@@ -179,7 +210,6 @@ func (k *kernel) clearBucket(e *Element, takerOrder types.KernelOrder, wg *sync.
 // run in single thread,  需确证可撮合的订单进入
 func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, isAsk bool) {
 	wg := sync.WaitGroup{}
-
 	// GTC takerOrder
 	removeBucketKeyList := list.New()
 	if takerOrder.TimeInForce == types.GTC {
@@ -196,7 +226,6 @@ func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, is
 				// async clear price bucket
 				takerOrder.Left += bucket.Left
 				takerOrder.FilledTotal -= bucket.Left * bucketListHead.Price
-				// todo: check if this can remove
 				if takerOrder.Left == 0 {
 					takerOrder.Status = types.CLOSED
 				}
@@ -299,4 +328,95 @@ func NewKernel() *kernel {
 		ask1PriceMux:    sync.Mutex{},
 		bid1PriceMux:    sync.Mutex{},
 	}
+}
+
+func restoreKernel(path string) (*kernel, bool) {
+	k := &kernel{
+		ask:             NewSkipList(),
+		bid:             NewSkipList(),
+		ask1Price:       math.MaxInt64,
+		bid1Price:       math.MinInt64,
+		matchedInfoChan: make(chan *matchedInfo),
+		errorInfoChan:   make(chan *KernelErr),
+		ask1PriceMux:    sync.Mutex{},
+		bid1PriceMux:    sync.Mutex{},
+	}
+
+	_, err := os.Stat(path + "finished.log")
+	if os.IsNotExist(err) {
+		log.Println("check file: finished.log not found")
+		return nil, false
+	}
+
+	wg := &sync.WaitGroup{}
+
+	askDir, err := ioutil.ReadDir(path + "ask/")
+	if err != nil {
+		log.Println(err.Error())
+		return nil, false
+	}
+
+	for i := range askDir {
+		wg.Add(1)
+		i := i
+		go func() {
+			defer wg.Done()
+			bytes, err := ioutil.ReadFile(path + "ask/" + askDir[i].Name())
+			//fmt.Println(askDir[i].Name())
+			if err != nil {
+				log.Println(err.Error())
+			}
+			l := readListFromBytes(bytes)
+			price := l.Front().Value.(*types.KernelOrder).Price
+			var left int64
+			for j := l.Front(); j != nil; j = j.Next() {
+				left += j.Value.(*types.KernelOrder).Left
+			}
+			k.ask.Set(float64(price), &priceBucket{
+				l:    l,
+				Left: 0,
+			})
+		}()
+
+	}
+
+	bidDir, err := ioutil.ReadDir(path + "bid/")
+	if err != nil {
+		log.Println(err.Error())
+		return nil, false
+	}
+
+	for i := range bidDir {
+		wg.Add(1)
+		i := i
+		go func() {
+			defer wg.Done()
+			bytes, err := ioutil.ReadFile(path + "bid/" + bidDir[i].Name())
+			if err != nil {
+				log.Println(err.Error())
+			}
+			l := readListFromBytes(bytes)
+			price := l.Front().Value.(*types.KernelOrder).Price
+			var left int64
+			for j := l.Front(); j != nil; j = j.Next() {
+				left += j.Value.(*types.KernelOrder).Left
+			}
+			k.bid.Set(float64(price), &priceBucket{
+				l:    l,
+				Left: 0,
+			})
+		}()
+	}
+
+	wg.Wait()
+
+	if k.ask.Length != 0 {
+		k.ask1Price = k.ask.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
+	}
+
+	if k.bid.Length != 0 {
+		k.bid1Price = k.bid.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
+	}
+
+	return k, true
 }

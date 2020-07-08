@@ -139,8 +139,8 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < testSize; i++ {
 
-		i2 := r.Int63n(int64(100)) + 200
-		i3 := r.Int63n(int64(100))
+		i2 := r.Int63n(int64(1000)) + 1 + 1000
+		i3 := r.Int63n(int64(1000)) + 1
 		order := &types.KernelOrder{
 			KernelOrderID: 0,
 			CreateTime:    0,
@@ -158,8 +158,8 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 		askSize -= i3
 	}
 	for i := 0; i < testSize; i++ {
-		i2 := r.Int63n(int64(100)) + 99
-		i3 := r.Int63n(int64(100))
+		i2 := r.Int63n(int64(1000)) + 1
+		i3 := r.Int63n(int64(1000)) + 1
 		order := &types.KernelOrder{
 			KernelOrderID: 0,
 			CreateTime:    0,
@@ -194,6 +194,11 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 	}
 	assert.Equal(t, askSize, checkAskSize)
 	assert.Equal(t, bidSize, checkBidSize)
+
+	st := time.Now().UnixNano()
+	k.takeSnapshot("test_insert")
+	et := time.Now().UnixNano()
+	fmt.Println("Snapshot finished in ", (et-st)/(1000*1000), " ms")
 }
 
 // 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个同价格且同数量订单, 匹配完成后ask/bid全空
@@ -357,82 +362,84 @@ func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 }
 
-//// 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个更高价格且同数量订单, 匹配完成后ask/bid全空
-//func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
-//	order := &types.KernelOrder{
-//		KernelOrderID: 0,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        100,
-//		Price:         200,
-//		Left:          100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	order2 := &types.KernelOrder{
-//		KernelOrderID: 1,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        -100,
-//		Price:         100,
-//		Left:          -100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//
-//	go startOrderAcceptor()
-//	orderChan <- order
-//	orderChan <- order2
-//
-//	i := 0
-//	for info := range matchingInfoChan {
-//		forCheck1 := types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    info.makerOrders[0].CreateTime,
-//			UpdateTime:    info.makerOrders[0].UpdateTime,
-//			Amount:        100,
-//			Price:         200,
-//			Left:          0,
-//			FilledTotal:   20000,
-//			Status:        types.CLOSED,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		forCheck2 := types.KernelOrder{
-//			KernelOrderID: 1,
-//			CreateTime:    info.takerOrder.CreateTime,
-//			UpdateTime:    info.takerOrder.UpdateTime,
-//			Amount:        -100,
-//			Price:         100,
-//			Left:          0,
-//			FilledTotal:   -20000,
-//			Status:        types.CLOSED,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		assert.Equal(t, forCheck1, info.makerOrders[0])
-//		assert.Equal(t, forCheck2, info.takerOrder)
-//		i++
-//		if i == 1 {
-//			break
-//		}
-//	}
-//	time.Sleep(100 * time.Millisecond)
-//	assert.Equal(t, int64(math.MaxInt64), ask1Price)
-//	assert.Equal(t, int64(math.MinInt64), bid1Price)
-//	assert.Equal(t, 0, ask.Length)
-//	assert.Equal(t, 0, bid.Length)
-//	close(orderChan)
-//}
-//
+// 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个更高价格且同数量订单, 匹配完成后ask/bid全空
+func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
+	acceptor := initAcceptor(1, "test")
+	order := &types.KernelOrder{
+		KernelOrderID: 0,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        100,
+		Price:         200,
+		Left:          100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	order2 := &types.KernelOrder{
+		KernelOrderID: 1,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        -100,
+		Price:         100,
+		Left:          -100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+
+	go acceptor.startOrderAcceptor()
+	acceptor.newOrderChan <- order
+	acceptor.newOrderChan <- order2
+
+	i := 0
+	for info := range acceptor.kernel.matchedInfoChan {
+		forCheck1 := types.KernelOrder{
+			KernelOrderID: 0,
+			CreateTime:    info.makerOrders[0].CreateTime,
+			UpdateTime:    info.makerOrders[0].UpdateTime,
+			Amount:        100,
+			Price:         200,
+			Left:          0,
+			FilledTotal:   20000,
+			Status:        types.CLOSED,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		forCheck2 := types.KernelOrder{
+			KernelOrderID: 1,
+			CreateTime:    info.takerOrder.CreateTime,
+			UpdateTime:    info.takerOrder.UpdateTime,
+			Amount:        -100,
+			Price:         100,
+			Left:          0,
+			FilledTotal:   -20000,
+			Status:        types.CLOSED,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		forCheck2.KernelOrderID = info.takerOrder.KernelOrderID
+		forCheck1.KernelOrderID = info.makerOrders[0].KernelOrderID
+		assert.Equal(t, forCheck1, info.makerOrders[0])
+		assert.Equal(t, forCheck2, info.takerOrder)
+		i++
+		if i == 1 {
+			break
+		}
+	}
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
+	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
+	assert.Equal(t, 0, acceptor.kernel.ask.Length)
+	assert.Equal(t, 0, acceptor.kernel.bid.Length)
+}
+
 //// 卖单(ask)列表只有一个订单, 买单(bid)匹配到一个更高价格且同数量订单, 匹配完成后ask/bid全空
 //func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 //	// ask
@@ -1111,5 +1118,18 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	st := time.Now().UnixNano()
 	acceptor.kernel.takeSnapshot("test")
 	et := time.Now().UnixNano()
-	fmt.Println((et - st) / (1000 * 1000))
+	fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
+}
+
+func TestRestoreKernel(t *testing.T) {
+	st := time.Now().UnixNano()
+	k, b := restoreKernel("./orderbook_snapshot/test_insert/1594205123/")
+	et := time.Now().UnixNano()
+	fmt.Println("Restore finished in ", (et-st)/(1000*1000), " ms")
+	fmt.Println(b)
+	fmt.Println(k.ask.Length)
+	fmt.Println(k.bid.Length)
+	fmt.Println(k.ask1Price)
+	fmt.Println(k.bid1Price)
+
 }
