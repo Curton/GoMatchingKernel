@@ -8,7 +8,7 @@ package exchangeKernel
 import (
 	"container/list"
 	"exchangeKernel/types"
-	"fmt"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
@@ -58,7 +58,7 @@ func TestWriteAndReadList(t *testing.T) {
 	l1 := list.New()
 	//l2 := list.New()
 
-	l1.PushFront(types.KernelOrder{
+	l1.PushFront(&types.KernelOrder{
 		KernelOrderID: uint64(1),
 		CreateTime:    0,
 		UpdateTime:    0,
@@ -71,7 +71,7 @@ func TestWriteAndReadList(t *testing.T) {
 		TimeInForce:   0,
 		Id:            0,
 	})
-	l1.PushFront(types.KernelOrder{
+	l1.PushFront(&types.KernelOrder{
 		KernelOrderID: uint64(2),
 		CreateTime:    0,
 		UpdateTime:    0,
@@ -84,7 +84,7 @@ func TestWriteAndReadList(t *testing.T) {
 		TimeInForce:   0,
 		Id:            0,
 	})
-	l1.PushFront(types.KernelOrder{
+	l1.PushFront(&types.KernelOrder{
 		KernelOrderID: uint64(3),
 		CreateTime:    0,
 		UpdateTime:    0,
@@ -97,7 +97,7 @@ func TestWriteAndReadList(t *testing.T) {
 		TimeInForce:   0,
 		Id:            0,
 	})
-	l1.PushFront(types.KernelOrder{
+	l1.PushFront(&types.KernelOrder{
 		KernelOrderID: uint64(4),
 		CreateTime:    0,
 		UpdateTime:    0,
@@ -111,20 +111,22 @@ func TestWriteAndReadList(t *testing.T) {
 		Id:            0,
 	})
 
-	l1Bytes := writeListAsBytes(l1)
-	fmt.Println(l1Bytes)
+	l1Bytes := kernelOrderListToBytes(l1)
+	//fmt.Println(l1Bytes)
 
 	l2 := readListFromBytes(l1Bytes)
 
-	l2Bytes := writeListAsBytes(l2)
-	fmt.Println(l2Bytes)
+	l2Bytes := kernelOrderListToBytes(l2)
+	//fmt.Println(l2Bytes)
+
+	assert.Equal(t, l1Bytes, l2Bytes)
 
 }
 
 func BenchmarkWriteList(b *testing.B) {
 	l := list.New()
 	for i := 0; i < b.N; i++ {
-		l.PushBack(types.KernelOrder{
+		l.PushBack(&types.KernelOrder{
 			KernelOrderID: uint64(i),
 			CreateTime:    0,
 			UpdateTime:    0,
@@ -139,5 +141,5 @@ func BenchmarkWriteList(b *testing.B) {
 		})
 	}
 	b.ResetTimer()
-	writeListAsBytes(l)
+	kernelOrderListToBytes(l)
 }

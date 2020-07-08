@@ -9,6 +9,8 @@ import (
 	"container/list"
 	"exchangeKernel/types"
 	"math"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -50,6 +52,34 @@ type orderBook struct {
 type orderBookItem struct {
 	Price int64
 	Size  int64
+}
+
+// should stop kernel before calling this func
+func (k *kernel) takeSnapshot(description string) {
+	uTime := time.Now().Unix()
+	uTimeFmt := strconv.FormatInt(uTime, 10)
+
+	for bucket := k.ask.Front(); bucket != nil; bucket = bucket.Next() {
+		pb := bucket.value.(*priceBucket)
+		order := pb.l.Front().Value.(*types.KernelOrder)
+		price := order.Price
+		f, _ := os.OpenFile(kernelSnapshotPath+description+"/"+uTimeFmt+"/ask/"+strconv.FormatInt(price, 10)+".list",
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644)
+		bytes := kernelOrderListToBytes(pb.l)
+		_, _ = f.Write(bytes)
+		_ = f.Close()
+	}
+
+	for bucket := k.bid.Front(); bucket != nil; bucket = bucket.Next() {
+		pb := bucket.value.(*priceBucket)
+		order := pb.l.Front().Value.(*types.KernelOrder)
+		price := order.Price
+		f, _ := os.OpenFile(kernelSnapshotPath+description+"/"+uTimeFmt+"/bid/"+strconv.FormatInt(price, 10)+".list",
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644)
+		bytes := kernelOrderListToBytes(pb.l)
+		_, _ = f.Write(bytes)
+		_ = f.Close()
+	}
 }
 
 // after price & amount checked, 附条件异步, (不同价格)的(不可成交)订单可以同时插入, 以上两个条件需同时满足

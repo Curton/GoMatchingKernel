@@ -34,41 +34,45 @@ func writeOrderLog(f *[1]*os.File, acceptorDescription string, kernelOder *types
 		f[0] = f2
 	}
 
-	if kernelOrderLogCache {
-		cachedOrder, ok := cachedOrderMap[acceptorDescription]
-		if ok {
-			b1 := getBytes(&cachedOrder)
-			b2 := getBytes(kernelOder)
-			buf := make([]byte, 0, len(b1)+len(b2))
-			buf = append(buf, b1...)
-			buf = append(buf, b2...)
-			if _, err := f[0].Write(buf); err != nil {
-				return false
-			}
-			delete(cachedOrderMap, acceptorDescription)
-		} else {
-			i, ok := lastTimeMap[acceptorDescription]
-			if ok {
-				if kernelOder.CreateTime-i < 3_000_000 {
-					lastTimeMap[acceptorDescription] = kernelOder.CreateTime
-					cachedOrderMap[acceptorDescription] = *kernelOder
-					return true
-				} else {
-					if _, err := f[0].Write(getBytes(kernelOder)); err != nil {
-						return false
-					}
-				}
-			} else {
-				lastTimeMap[acceptorDescription] = kernelOder.CreateTime
-				if _, err := f[0].Write(getBytes(kernelOder)); err != nil {
-					return false
-				}
-			}
-		}
-	} else {
-		if _, err := f[0].Write(getBytes(kernelOder)); err != nil {
-			return false
-		}
+	//if kernelOrderLogCache {
+	//	cachedOrder, ok := cachedOrderMap[acceptorDescription]
+	//	if ok {
+	//		b1 := getBytes(&cachedOrder)
+	//		b2 := getBytes(kernelOder)
+	//		buf := make([]byte, 0, len(b1)+len(b2))
+	//		buf = append(buf, b1...)
+	//		buf = append(buf, b2...)
+	//		if _, err := f[0].Write(buf); err != nil {
+	//			return false
+	//		}
+	//		delete(cachedOrderMap, acceptorDescription)
+	//	} else {
+	//		i, ok := lastTimeMap[acceptorDescription]
+	//		if ok {
+	//			if kernelOder.CreateTime-i < 3_000_000 {
+	//				lastTimeMap[acceptorDescription] = kernelOder.CreateTime
+	//				cachedOrderMap[acceptorDescription] = *kernelOder
+	//				return true
+	//			} else {
+	//				if _, err := f[0].Write(getBytes(kernelOder)); err != nil {
+	//					return false
+	//				}
+	//			}
+	//		} else {
+	//			lastTimeMap[acceptorDescription] = kernelOder.CreateTime
+	//			if _, err := f[0].Write(getBytes(kernelOder)); err != nil {
+	//				return false
+	//			}
+	//		}
+	//	}
+	//} else {
+	//	if _, err := f[0].Write(getBytes(kernelOder)); err != nil {
+	//		return false
+	//	}
+	//}
+
+	if _, err := f[0].Write(getBytes(kernelOder)); err != nil {
+		return false
 	}
 
 	return true
@@ -88,11 +92,11 @@ func RecoverSince() {
 
 }
 
-func writeListAsBytes(list *list.List) []byte {
+func kernelOrderListToBytes(list *list.List) []byte {
 	var buf bytes.Buffer
 	slice := make([]types.KernelOrder, 0, list.Len())
 	for i := list.Front(); i != nil; i = i.Next() {
-		slice = append(slice, i.Value.(types.KernelOrder))
+		slice = append(slice, *i.Value.(*types.KernelOrder))
 	}
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(slice)
@@ -114,7 +118,7 @@ func readListFromBytes(b []byte) *list.List {
 	l := list.New()
 	if slice != nil {
 		for i := range slice {
-			l.PushBack(slice[i])
+			l.PushBack(&slice[i])
 		}
 	}
 	return l
