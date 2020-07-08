@@ -163,18 +163,18 @@ func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, is
 			}
 			// check if enough amount of left order in a bucket
 			if (isAsk && bucket.Left <= -takerOrder.Left) || (!isAsk && bucket.Left >= -takerOrder.Left) {
-				// 可异步清空价价格篮子
+				// async clear price bucket
 				takerOrder.Left += bucket.Left
 				takerOrder.FilledTotal -= bucket.Left * bucketListHead.Price
+				// todo: check if this can remove
 				if takerOrder.Left == 0 {
 					takerOrder.Status = types.CLOSED
 				}
 				takerOrder.UpdateTime = time.Now().UnixNano()
 				removeBucketKeyList.PushBack(skipListElement.key)
 				wg.Add(1)
-				//clearBucket(skipListElement, *takerOrder, &wg)
 				go k.clearBucket(skipListElement, *takerOrder, &wg, bucket.Left)
-			} else { // 匹配剩余订单
+			} else { // matching remaining order
 				if takerOrder.Left == 0 {
 					break Loop
 				}
@@ -188,7 +188,7 @@ func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, is
 					matchedOrder := listElement.Value.(*types.KernelOrder)
 					unixNano := time.Now().UnixNano()
 					if (isAsk && matchedOrder.Left <= -takerOrder.Left) || (!isAsk && matchedOrder.Left >= -takerOrder.Left) {
-						// 全部吃完
+						// clear matched maker Order
 						bucket.Left -= matchedOrder.Left
 						takerOrder.Left += matchedOrder.Left
 						matchedOrder.FilledTotal += matchedOrder.Left * matchedOrder.Price
@@ -216,13 +216,11 @@ func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, is
 						takerOrder.UpdateTime = unixNano
 						takerOrder.Status = types.CLOSED
 						matchingInfo.takerOrder = *takerOrder
-						// send matched
+						// send matched info.
 						k.matchedInfoChan <- matchingInfo
 						break Loop
 					}
 				}
-				// fail fast
-				//panic("takerOrder.Left expected to be 0, actual value is " + strconv.FormatInt(takerOrder.Left, 10))
 			}
 		}
 		// Loop end
@@ -233,7 +231,7 @@ func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, is
 		}
 	}
 
-	// 清理 bucket
+	// remove cleared bucket
 	for e := removeBucketKeyList.Front(); e != nil; e = e.Next() {
 		side.Remove(e.Value.(float64))
 	}
@@ -241,7 +239,6 @@ func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, is
 	// 等待异步处理完成
 	wg.Wait()
 
-	//fmt.Println("----------------------------------------------------------------")
 	// 必须等待异步处理完成后, 更新买一/卖一价格
 	if side.Length != 0 {
 		bucket := side.Front().value.(*priceBucket)
