@@ -139,7 +139,7 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < testSize; i++ {
 
-		i2 := r.Int63n(int64(1000)) + 1 + 1000
+		i2 := r.Int63n(int64(2000)) + 1 + 2000
 		i3 := r.Int63n(int64(1000)) + 1
 		order := &types.KernelOrder{
 			KernelOrderID: 0,
@@ -158,7 +158,7 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 		askSize -= i3
 	}
 	for i := 0; i < testSize; i++ {
-		i2 := r.Int63n(int64(1000)) + 1
+		i2 := r.Int63n(int64(2000)) + 1
 		i3 := r.Int63n(int64(1000)) + 1
 		order := &types.KernelOrder{
 			KernelOrderID: 0,
@@ -1123,7 +1123,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 
 func TestRestoreKernel(t *testing.T) {
 	st := time.Now().UnixNano()
-	k, b := restoreKernel("./orderbook_snapshot/test_insert/1594205123/")
+	k, b := restoreKernel("./orderbook_snapshot/test_insert/1594269823/")
 	et := time.Now().UnixNano()
 	fmt.Println("Restore finished in ", (et-st)/(1000*1000), " ms")
 	fmt.Println(b)
@@ -1131,5 +1131,63 @@ func TestRestoreKernel(t *testing.T) {
 	fmt.Println(k.bid.Length)
 	fmt.Println(k.ask1Price)
 	fmt.Println(k.bid1Price)
+
+}
+
+func Test_kernel_cancelOrder(t *testing.T) {
+	// bid
+	order := &types.KernelOrder{
+		KernelOrderID: 0,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        100,
+		Price:         200,
+		Left:          100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	// ask
+	order2 := &types.KernelOrder{
+		KernelOrderID: 1,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        -100,
+		Price:         201,
+		Left:          -100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+
+	acceptor := initAcceptor(1, "test")
+	go acceptor.startOrderAcceptor()
+
+	acceptor.newOrderChan <- order
+	acceptor.newOrderChan <- order2
+
+	time.Sleep(time.Millisecond * 10)
+	assert.Equal(t, 1, acceptor.kernel.ask.Length)
+	assert.Equal(t, 1, acceptor.kernel.bid.Length)
+
+	ids := make([]*types.KernelOrder, 0, 2)
+	for i := 0; i < 2; i++ {
+		v := <-acceptor.orderAcceptedChan
+		ids = append(ids, v)
+	}
+
+	for i := range ids {
+		ids[i].Amount = 0
+		acceptor.newOrderChan <- ids[i]
+	}
+	time.Sleep(time.Millisecond * 10)
+	assert.Equal(t, 0, acceptor.kernel.ask.Length)
+	assert.Equal(t, 0, acceptor.kernel.bid.Length)
+	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
+	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
 
 }

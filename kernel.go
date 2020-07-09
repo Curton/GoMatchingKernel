@@ -113,6 +113,58 @@ func (k *kernel) takeSnapshot(description string) {
 	_ = f.Close()
 }
 
+// should sync call
+func (k *kernel) cancelOrder(order *types.KernelOrder) {
+	get := k.ask.Get(float64(order.Price))
+	if get != nil {
+		bucket := get.Value().(*priceBucket)
+		for i := bucket.l.Front(); i != nil; i = i.Next() {
+			kernelOrder := i.Value.(*types.KernelOrder)
+			if kernelOrder.KernelOrderID == order.KernelOrderID {
+				bucket.Left -= kernelOrder.Left
+				bucket.l.Remove(i)
+				break
+			}
+		}
+		// remove bucket if empty
+		if bucket.Left == 0 {
+			k.ask.Remove(float64(order.Price))
+		}
+		// reset ask1Price
+		if k.ask.Length == 0 {
+			k.ask1Price = math.MaxInt64
+		} else {
+			k.ask1Price = k.ask.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
+		}
+		return
+	}
+
+	get2 := k.bid.Get(float64(-order.Price))
+	if get2 != nil {
+		bucket := get2.Value().(*priceBucket)
+		for i := bucket.l.Front(); i != nil; i = i.Next() {
+			kernelOrder := i.Value.(*types.KernelOrder)
+			if kernelOrder.KernelOrderID == order.KernelOrderID {
+				bucket.Left -= kernelOrder.Left
+				bucket.l.Remove(i)
+				break
+			}
+		}
+		// remove bucket if empty
+		if bucket.Left == 0 {
+			k.bid.Remove(float64(-order.Price))
+		}
+		// reset bid1Price
+		if k.bid.Length == 0 {
+			k.bid1Price = math.MinInt64
+		} else {
+			k.bid1Price = k.bid.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
+		}
+		return
+	}
+	log.Println("cancel err, can't find order : ", order.KernelOrderID)
+}
+
 // after price & amount checked, 附条件异步, (不同价格)的(不可成交)订单可以同时插入, 以上两个条件需同时满足
 func (k *kernel) insertCheckedOrder(order *types.KernelOrder) bool {
 	if order.Amount < 0 {

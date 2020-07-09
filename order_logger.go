@@ -10,7 +10,7 @@ import (
 	"container/list"
 	"encoding/gob"
 	"exchangeKernel/types"
-	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -101,7 +101,7 @@ func kernelOrderListToBytes(list *list.List) []byte {
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(slice)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 	}
 	return buf.Bytes()
 }
@@ -113,7 +113,7 @@ func readListFromBytes(b []byte) *list.List {
 	var slice []types.KernelOrder
 	err := dec.Decode(&slice)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 	}
 	l := list.New()
 	if slice != nil {
