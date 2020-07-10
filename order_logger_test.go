@@ -8,7 +8,9 @@ package exchangeKernel
 import (
 	"container/list"
 	"exchangeKernel/types"
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"math"
 	"os"
 	"testing"
 )
@@ -142,4 +144,41 @@ func BenchmarkWriteList(b *testing.B) {
 	}
 	b.ResetTimer()
 	kernelOrderListToBytes(l)
+}
+
+func Test_bytesToKernelOrder(t *testing.T) {
+	bytes := getBytes(&types.KernelOrder{
+		KernelOrderID: 123,
+		CreateTime:    2,
+		UpdateTime:    3,
+		Amount:        4,
+		Price:         5,
+		Left:          6,
+		FilledTotal:   7,
+		Status:        8,
+		Type:          9,
+		TimeInForce:   10,
+		Id:            11,
+	})
+
+	order := bytesToKernelOrder(bytes)
+	fmt.Println(*order)
+}
+
+func Test_getBytes(t *testing.T) {
+	bytes := getBytes(&types.KernelOrder{
+		KernelOrderID: math.MaxUint64,
+		CreateTime:    math.MinInt64,
+		UpdateTime:    math.MinInt64,
+		Amount:        math.MinInt64,
+		Price:         math.MinInt64,
+		Left:          math.MinInt64,
+		FilledTotal:   math.MinInt64,
+		Status:        math.MinInt8,
+		Type:          math.MinInt8,
+		TimeInForce:   math.MinInt8,
+		Id:            math.MaxUint64,
+	})
+	fmt.Println(len(bytes))
+	fmt.Println(cap(bytes))
 }

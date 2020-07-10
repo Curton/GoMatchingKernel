@@ -76,9 +76,9 @@ func (s *scheduler) startOrderAcceptor() {
 
 func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 	return &scheduler{
-		kernel:              NewKernel(),
-		newOrderChan:        make(chan *types.KernelOrder, 1<<8),
-		orderAcceptedChan:   make(chan *types.KernelOrder, 1<<8),
+		kernel:              newKernel(),
+		newOrderChan:        make(chan *types.KernelOrder, 1),
+		orderAcceptedChan:   make(chan *types.KernelOrder, 1),
 		serverId:            serverId,
 		serverMask:          serverId << (64 - 16 - 1),
 		r:                   rand.New(rand.NewSource(time.Now().UnixNano())),
@@ -88,12 +88,12 @@ func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 }
 
 func (s *scheduler) enableRedoKernel() {
-	s.redoKernel = NewKernel()
+	s.redoKernel = newKernel()
 }
 
 //func restoreAccept(serverId uint64, acceptorDescription string) *scheduler {
 //	return &scheduler{
-//		kernel:              NewKernel(),
+//		kernel:              newKernel(),
 //		newOrderChan:        make(chan *types.KernelOrder, 1<<10),
 //		serverId:            serverId,
 //		serverMask:          serverId << (64 - 16 - 1),

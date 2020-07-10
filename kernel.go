@@ -262,8 +262,46 @@ func (k *kernel) clearBucket(e *Element, takerOrder types.KernelOrder, wg *sync.
 // run in single thread,  需确证可撮合的订单进入
 func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, isAsk bool) {
 	wg := sync.WaitGroup{}
-	// GTC takerOrder
 	removeBucketKeyList := list.New()
+	// POC
+	if takerOrder.TimeInForce == types.POC {
+		// cancel
+		takerOrder.UpdateTime = time.Now().UnixNano()
+		takerOrder.Status = types.CANCELLED
+		k.matchedInfoChan <- &matchedInfo{
+			makerOrders:    nil,
+			matchedSizeMap: nil,
+			takerOrder:     *takerOrder,
+		}
+		return
+	}
+	// IOC : Immediate Or Cancel
+	if takerOrder.TimeInForce == types.IOC {
+		var priceMatchedLeft int64
+		for skipListElement := side.Front(); skipListElement != nil; skipListElement = skipListElement.Next() {
+			bucket := skipListElement.Value().(*priceBucket)
+			bucketListHead := bucket.l.Front().Value.(*types.KernelOrder)
+			// check price
+			if (isAsk && bucketListHead.Price < takerOrder.Price) || (!isAsk && bucketListHead.Price > takerOrder.Price) {
+				break
+			}
+			priceMatchedLeft += bucket.Left
+		}
+		// not enough orders left
+		if (isAsk && takerOrder.Left < priceMatchedLeft) || (!isAsk && takerOrder.Left > priceMatchedLeft) {
+			// cancel
+			takerOrder.UpdateTime = time.Now().UnixNano()
+			takerOrder.Status = types.CANCELLED
+			k.matchedInfoChan <- &matchedInfo{
+				makerOrders:    nil,
+				matchedSizeMap: nil,
+				takerOrder:     *takerOrder,
+			}
+			return
+		}
+	}
+
+	// GTC takerOrder
 	if takerOrder.TimeInForce == types.GTC {
 	Loop:
 		for skipListElement := side.Front(); skipListElement != nil; skipListElement = skipListElement.Next() {
@@ -369,7 +407,7 @@ func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, is
 	}
 }
 
-func NewKernel() *kernel {
+func newKernel() *kernel {
 	return &kernel{
 		ask:             NewSkipList(),
 		bid:             NewSkipList(),
