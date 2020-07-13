@@ -1075,6 +1075,8 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		}
 	}()
 
+	acceptor.enableRedoKernel()
+
 	done := make(chan bool)
 	start := time.Now().UnixNano()
 	go func() {
@@ -1163,11 +1165,11 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		}
 	}
 	assert.Equal(t, askSum, -bidSum)
-	st := time.Now().UnixNano()
-	acceptor.kernel.takeSnapshot("test")
-	et := time.Now().UnixNano()
-	fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
-	orderLogReader(acceptor.f)
+	//st := time.Now().UnixNano()
+	//acceptor.kernel.takeSnapshot("test")
+	//et := time.Now().UnixNano()
+	//fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
+	time.Sleep(10 * time.Second)
 }
 
 func TestRestoreKernel(t *testing.T) {

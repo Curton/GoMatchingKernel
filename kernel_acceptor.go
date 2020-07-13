@@ -16,6 +16,7 @@ type scheduler struct {
 	kernel              *kernel
 	redoKernel          *kernel
 	newOrderChan        chan *types.KernelOrder
+	redoOrderChan       chan *types.KernelOrder
 	orderConfirmedChan  chan *types.KernelOrder
 	serverId            uint64
 	serverMask          uint64
@@ -82,6 +83,45 @@ func (s *scheduler) startOrderAcceptor() {
 	}
 }
 
+func (s *scheduler) startRedoOrderAcceptor() {
+	for recv := range s.redoOrderChan {
+		// cancel order
+		if recv.Amount == 0 {
+			recv.Status = types.CANCELLED
+			s.redoKernel.cancelOrder(recv)
+			continue
+		}
+		kernelOrder := *recv
+		kernelOrder.CreateTime = time.Now().UnixNano()
+		uint64R := uint64(s.r.Int63())
+		kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | s.serverMask // use the first 16 bits as server Id
+
+		if kernelOrder.Type == types.LIMIT {
+			// limit order, 限价单
+			if kernelOrder.Amount > 0 {
+				// bid order
+				if kernelOrder.Price < s.redoKernel.ask1Price {
+					// 不能成交,直接插入
+					s.redoKernel.insertCheckedOrder(&kernelOrder)
+				} else {
+					s.redoKernel.matchingOrder(s.redoKernel.ask, &kernelOrder, false)
+				}
+			} else {
+				// ask order
+				if kernelOrder.Price > s.redoKernel.bid1Price {
+					// 不能成交,直接插入
+					s.redoKernel.insertCheckedOrder(&kernelOrder)
+				} else {
+					s.redoKernel.matchingOrder(s.redoKernel.bid, &kernelOrder, true)
+				}
+			}
+		} else if kernelOrder.Type == types.MARKET {
+			// 市价单
+			// todo
+		}
+	}
+}
+
 func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 	return &scheduler{
 		kernel:              newKernel(),
@@ -97,24 +137,16 @@ func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 
 func (s *scheduler) enableRedoKernel() {
 	s.redoKernel = newKernel()
+	go s.startRedoOrderAcceptor()
+	s.redoKernel.startDummyMatchedInfoChan()
+	time.Sleep(time.Second)
+	go orderLogReader(s)
 }
 
 func (s *scheduler) startDummyOrderConfirmedChan() {
 	go func() {
-		for true {
+		for {
 			<-s.orderConfirmedChan
 		}
 	}()
 }
-
-//func restoreAccept(serverId uint64, acceptorDescription string) *scheduler {
-//	return &scheduler{
-//		kernel:              newKernel(),
-//		newOrderChan:        make(chan *types.KernelOrder, 1<<10),
-//		serverId:            serverId,
-//		serverMask:          serverId << (64 - 16 - 1),
-//		r:                   rand.New(rand.NewSource(time.Now().UnixNano())),
-//		acceptorDescription: acceptorDescription,
-//		f:                   &[1]*os.File{nil},
-//	}
-//}

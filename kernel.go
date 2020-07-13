@@ -36,9 +36,6 @@ type matchedInfo struct {
 
 type KernelErr error
 
-type Kernel struct {
-}
-
 // new order at the head of the list, old order at the tail of the list
 // a.k.a price level
 type priceBucket struct {

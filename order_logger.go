@@ -11,21 +11,11 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"exchangeKernel/types"
-	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
 	"time"
-)
-
-const (
-	CRLF2 = "\r\n\r\n"
-)
-
-var (
-	cachedOrderMap = make(map[string]types.KernelOrder)
-	lastTimeMap    = make(map[string]int64)
-	CrlfBytes      = []byte(CRLF2)
 )
 
 func writeOrderLog(f *[1]*os.File, acceptorDescription string, kernelOrder *types.KernelOrder) bool {
@@ -42,7 +32,6 @@ func writeOrderLog(f *[1]*os.File, acceptorDescription string, kernelOrder *type
 			return false
 		}
 		f[0] = f2
-		log.Println("hhh")
 	}
 
 	//if kernelOrderLogCache {
@@ -164,26 +153,33 @@ func readOrderBinary(b []byte) *types.KernelOrder {
 	return order
 }
 
-func orderLogReader(f *[1]*os.File) {
-	if f == nil || f[0] == nil {
+// read orders from file to redo order
+func orderLogReader(s *scheduler) {
+	for s.f[0] == nil {
 		log.Println("Err in orderLogReader : FD is <nil>")
-		return
+		time.Sleep(time.Second)
 	}
 	sample := getOrderBinary(&types.KernelOrder{})
 	size := len(sample)
 	tmp := make([]byte, size)
 	var off int64 = 0
 	for {
-		n, err := f[0].ReadAt(tmp, off)
+		_, err := s.f[0].ReadAt(tmp, off)
 		if err != nil {
-			// todo
+			if err == io.EOF {
+				// stop kernel
+				time.Sleep(time.Second)
+				log.Println("take snapshot")
+				s.redoKernel.takeSnapshot("redo")
+				continue
+			}
 			log.Println(err.Error())
-			log.Println("read: ", n)
 			time.Sleep(time.Second)
 			continue
 		}
-		off += (int64)(size)
+		off += int64(size)
 		o := readOrderBinary(tmp)
-		fmt.Println(o)
+		s.redoOrderChan <- o
+		log.Println(o)
 	}
 }
