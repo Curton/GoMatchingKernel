@@ -16,8 +16,8 @@ import (
 )
 
 // GOMAXPROCS=1 go test -bench=BenchmarkWrite -run=none -benchtime=1s -benchmem
-func BenchmarkWrite(b *testing.B) {
-	var f *[1]*os.File = &[1]*os.File{nil}
+func BenchmarkWriteOrderLog(b *testing.B) {
+	var f = &[1]*os.File{nil}
 	for i := 0; i < b.N; i++ {
 		writeOrderLog(f, "test", &types.KernelOrder{
 			KernelOrderID: 0,
@@ -35,9 +35,9 @@ func BenchmarkWrite(b *testing.B) {
 	}
 }
 
-func TestWrite(t *testing.T) {
-	var f *[1]*os.File = &[1]*os.File{nil}
-	for i := 0; i < 10000; i++ {
+func TestWriteOrderLog(t *testing.T) {
+	var f = &[1]*os.File{nil}
+	for i := 0; i < 10_000; i++ {
 		if writeOrderLog(f, "test", &types.KernelOrder{
 			KernelOrderID: 0,
 			CreateTime:    0,
@@ -174,11 +174,36 @@ func Test_getBytes(t *testing.T) {
 		Price:         math.MinInt64,
 		Left:          math.MinInt64,
 		FilledTotal:   math.MinInt64,
-		Status:        math.MinInt8,
-		Type:          math.MinInt8,
-		TimeInForce:   math.MinInt8,
+		Status:        math.MaxUint8,
+		Type:          math.MaxUint8,
+		TimeInForce:   math.MaxUint8,
 		Id:            math.MaxUint64,
 	})
 	fmt.Println(len(bytes))
 	fmt.Println(cap(bytes))
+}
+
+func Test_getBinary(t *testing.T) {
+	bytes := getOrderBinary(&types.KernelOrder{
+		KernelOrderID: math.MaxUint64,
+		CreateTime:    math.MinInt64,
+		UpdateTime:    math.MinInt64,
+		Amount:        math.MinInt64,
+		Price:         math.MinInt64,
+		Left:          math.MinInt64,
+		FilledTotal:   math.MinInt64,
+		Status:        math.MaxUint8,
+		Type:          math.MaxUint8,
+		TimeInForce:   math.MaxUint8,
+		Id:            math.MaxUint64,
+	})
+	bytes2 := getOrderBinary(&types.KernelOrder{})
+	fmt.Println(len(bytes))
+	fmt.Println(cap(bytes))
+	fmt.Println(len(bytes2))
+	fmt.Println(cap(bytes2))
+
+	fmt.Println(readOrderBinary(bytes))
+	fmt.Println(readOrderBinary(bytes2))
+
 }

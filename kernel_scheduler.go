@@ -16,7 +16,7 @@ type scheduler struct {
 	kernel              *kernel
 	redoKernel          *kernel
 	newOrderChan        chan *types.KernelOrder
-	orderAcceptedChan   chan *types.KernelOrder
+	orderConfirmedChan  chan *types.KernelOrder
 	serverId            uint64
 	serverMask          uint64
 	r                   *rand.Rand
@@ -32,10 +32,14 @@ func (s *scheduler) startOrderAcceptor() {
 		if recv.Amount == 0 {
 			recv.Status = types.CANCELLED
 			// write log
-			writeOrderLog(s.f, s.acceptorDescription, recv)
-			s.kernel.cancelOrder(recv)
+			if saveOrderLog {
+				if writeOrderLog(s.f, s.acceptorDescription, recv) != true {
+					continue
+				}
+			}
 			// accept order signal
-			s.orderAcceptedChan <- recv
+			s.orderConfirmedChan <- recv
+			s.kernel.cancelOrder(recv)
 			continue
 		}
 		kernelOrder := *recv
@@ -43,10 +47,14 @@ func (s *scheduler) startOrderAcceptor() {
 		uint64R := uint64(s.r.Int63())
 		kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | s.serverMask // use the first 16 bits as server Id
 		// write log
-		writeOrderLog(s.f, s.acceptorDescription, &kernelOrder)
+		if saveOrderLog {
+			if writeOrderLog(s.f, s.acceptorDescription, recv) != true {
+				continue
+			}
+		}
 		// accept order signal
 		tmp := kernelOrder
-		s.orderAcceptedChan <- &tmp
+		s.orderConfirmedChan <- &tmp
 
 		if kernelOrder.Type == types.LIMIT {
 			// limit order, 限价单
@@ -78,7 +86,7 @@ func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 	return &scheduler{
 		kernel:              newKernel(),
 		newOrderChan:        make(chan *types.KernelOrder, 1),
-		orderAcceptedChan:   make(chan *types.KernelOrder, 1),
+		orderConfirmedChan:  make(chan *types.KernelOrder),
 		serverId:            serverId,
 		serverMask:          serverId << (64 - 16 - 1),
 		r:                   rand.New(rand.NewSource(time.Now().UnixNano())),
@@ -89,6 +97,14 @@ func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 
 func (s *scheduler) enableRedoKernel() {
 	s.redoKernel = newKernel()
+}
+
+func (s *scheduler) startDummyOrderConfirmedChan() {
+	go func() {
+		for true {
+			<-s.orderConfirmedChan
+		}
+	}()
 }
 
 //func restoreAccept(serverId uint64, acceptorDescription string) *scheduler {

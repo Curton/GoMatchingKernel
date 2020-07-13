@@ -62,7 +62,6 @@ func (k *kernel) takeSnapshot(description string) {
 	uTimeFmt := strconv.FormatInt(uTime, 10)
 	askBasePath := kernelSnapshotPath + description + "/" + uTimeFmt + "/ask/"
 	bidBasePath := kernelSnapshotPath + description + "/" + uTimeFmt + "/bid/"
-	//syscall.Umask(0)
 	_ = os.MkdirAll(askBasePath, 0755)
 	_ = os.MkdirAll(bidBasePath, 0755)
 
@@ -509,4 +508,12 @@ func restoreKernel(path string) (*kernel, bool) {
 	}
 
 	return k, true
+}
+
+func (k *kernel) startDummyMatchedInfoChan() {
+	go func() {
+		for {
+			<-k.matchedInfoChan
+		}
+	}()
 }

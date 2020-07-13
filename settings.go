@@ -9,4 +9,5 @@ var (
 	kernelOrderLogPath  = "./kernelorder_log/"
 	kernelSnapshotPath  = "./orderbook_snapshot/"
 	kernelOrderLogCache = true
+	saveOrderLog        = true
 )

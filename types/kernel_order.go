@@ -1,10 +1,10 @@
 package types
 
-type OrderStatus int8
+type OrderStatus uint8
 
-type OrderType int8
+type OrderType uint8
 
-type TimeInForce int8
+type TimeInForce uint8
 
 const (
 	LIMIT OrderType = iota
@@ -44,12 +44,12 @@ type KernelOrder struct {
 	Left int64 `json:"left,omitempty"`
 	// Total filled in quote currency
 	FilledTotal int64 `json:"filled_total,omitempty"`
+	// Order ID
+	Id uint64 `json:"id,omitempty"`
 	// KernelOrder status  - `open`: to be filled - `closed`: filled - `cancelled`: cancelled
 	Status OrderStatus `json:"status,omitempty"`
 	// KernelOrder type. limit - limit order
 	Type OrderType `json:"type,omitempty"`
 	// Time in force  - gtc: GoodTillCancelled - ioc: ImmediateOrCancelled, taker only - poc: PendingOrCancelled, reduce only
 	TimeInForce TimeInForce `json:"time_in_force,omitempty"`
-	// Order ID
-	Id uint64 `json:"id,omitempty"`
 }

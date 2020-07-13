@@ -201,85 +201,85 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 	fmt.Println("Snapshot finished in ", (et-st)/(1000*1000), " ms")
 }
 
-func Test_redoLog(t *testing.T) {
-	// bid
-	order := &types.KernelOrder{
-		KernelOrderID: 0,
-		CreateTime:    0,
-		UpdateTime:    0,
-		Amount:        100,
-		Price:         200,
-		Left:          100,
-		FilledTotal:   0,
-		Status:        0,
-		Type:          0,
-		TimeInForce:   0,
-		Id:            0,
-	}
-	// ask
-	order2 := &types.KernelOrder{
-		KernelOrderID: 1,
-		CreateTime:    0,
-		UpdateTime:    0,
-		Amount:        -100,
-		Price:         200,
-		Left:          -100,
-		FilledTotal:   0,
-		Status:        0,
-		Type:          0,
-		TimeInForce:   0,
-		Id:            0,
-	}
-
-	acceptor := initAcceptor(1, "test")
-	//acceptor.enableRedoKernel()
-	go acceptor.startOrderAcceptor()
-
-	acceptor.newOrderChan <- order
-	acceptor.newOrderChan <- order2
-
-	i := 0
-	for info := range acceptor.kernel.matchedInfoChan {
-		forCheck1 := types.KernelOrder{
-			KernelOrderID: info.makerOrders[0].KernelOrderID,
-			CreateTime:    info.makerOrders[0].CreateTime,
-			UpdateTime:    info.makerOrders[0].UpdateTime,
-			Amount:        100,
-			Price:         200,
-			Left:          0,
-			FilledTotal:   20000,
-			Status:        types.CLOSED,
-			Type:          0,
-			TimeInForce:   0,
-			Id:            0,
-		}
-		forCheck2 := types.KernelOrder{
-			KernelOrderID: info.takerOrder.KernelOrderID,
-			CreateTime:    info.takerOrder.CreateTime,
-			UpdateTime:    info.takerOrder.UpdateTime,
-			Amount:        -100,
-			Price:         200,
-			Left:          0,
-			FilledTotal:   -20000,
-			Status:        types.CLOSED,
-			Type:          0,
-			TimeInForce:   0,
-			Id:            0,
-		}
-		assert.Equal(t, forCheck1, info.makerOrders[0])
-		assert.Equal(t, forCheck2, info.takerOrder)
-		i++
-		if i == 1 {
-			break
-		}
-	}
-	time.Sleep(100 * time.Millisecond)
-	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
-	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
-	assert.Equal(t, 0, acceptor.kernel.ask.Length)
-	assert.Equal(t, 0, acceptor.kernel.bid.Length)
-	//orderLogReader(acceptor.f)
-}
+//func Test_redoLog(t *testing.T) {
+//	// bid
+//	order := &types.KernelOrder{
+//		KernelOrderID: 0,
+//		CreateTime:    0,
+//		UpdateTime:    0,
+//		Amount:        100,
+//		Price:         200,
+//		Left:          100,
+//		FilledTotal:   0,
+//		Status:        0,
+//		Type:          0,
+//		TimeInForce:   0,
+//		Id:            0,
+//	}
+//	// ask
+//	order2 := &types.KernelOrder{
+//		KernelOrderID: 1,
+//		CreateTime:    0,
+//		UpdateTime:    0,
+//		Amount:        -100,
+//		Price:         200,
+//		Left:          -100,
+//		FilledTotal:   0,
+//		Status:        0,
+//		Type:          0,
+//		TimeInForce:   0,
+//		Id:            0,
+//	}
+//
+//	acceptor := initAcceptor(1, "test")
+//	//acceptor.enableRedoKernel()
+//	go acceptor.startOrderAcceptor()
+//	acceptor.startDummyOrderConfirmedChan()
+//
+//	acceptor.newOrderChan <- order
+//	acceptor.newOrderChan <- order2
+//
+//	i := 0
+//	for info := range acceptor.kernel.matchedInfoChan {
+//		forCheck1 := types.KernelOrder{
+//			KernelOrderID: info.makerOrders[0].KernelOrderID,
+//			CreateTime:    info.makerOrders[0].CreateTime,
+//			UpdateTime:    info.makerOrders[0].UpdateTime,
+//			Amount:        100,
+//			Price:         200,
+//			Left:          0,
+//			FilledTotal:   20000,
+//			Status:        types.CLOSED,
+//			Type:          0,
+//			TimeInForce:   0,
+//			Id:            0,
+//		}
+//		forCheck2 := types.KernelOrder{
+//			KernelOrderID: info.takerOrder.KernelOrderID,
+//			CreateTime:    info.takerOrder.CreateTime,
+//			UpdateTime:    info.takerOrder.UpdateTime,
+//			Amount:        -100,
+//			Price:         200,
+//			Left:          0,
+//			FilledTotal:   -20000,
+//			Status:        types.CLOSED,
+//			Type:          0,
+//			TimeInForce:   0,
+//			Id:            0,
+//		}
+//		assert.Equal(t, forCheck1, info.makerOrders[0])
+//		assert.Equal(t, forCheck2, info.takerOrder)
+//		i++
+//		if i == 1 {
+//			break
+//		}
+//	}
+//	time.Sleep(100 * time.Millisecond)
+//	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
+//	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
+//	assert.Equal(t, 0, acceptor.kernel.ask.Length)
+//	assert.Equal(t, 0, acceptor.kernel.bid.Length)
+//}
 
 // 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个同价格且同数量订单, 匹配完成后ask/bid全空
 func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
@@ -314,6 +314,7 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 
 	acceptor := initAcceptor(1, "test")
 	go acceptor.startOrderAcceptor()
+	acceptor.startDummyOrderConfirmedChan()
 
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
@@ -393,6 +394,7 @@ func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 	}
 
 	go acceptor.startOrderAcceptor()
+	acceptor.startDummyOrderConfirmedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -473,6 +475,7 @@ func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 	}
 
 	go acceptor.startOrderAcceptor()
+	acceptor.startDummyOrderConfirmedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -520,500 +523,459 @@ func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 }
 
-//// 卖单(ask)列表只有一个订单, 买单(bid)匹配到一个更高价格且同数量订单, 匹配完成后ask/bid全空
-//func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
-//	// ask
-//	order := &types.KernelOrder{
-//		KernelOrderID: 0,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        -100,
-//		Price:         200,
-//		Left:          -100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	// bid
-//	order2 := &types.KernelOrder{
-//		KernelOrderID: 1,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        100,
-//		Price:         300,
-//		Left:          100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//
-//	go startOrderAcceptor()
-//	orderChan <- order
-//	orderChan <- order2
-//
-//	i := 0
-//	for info := range matchingInfoChan {
-//		forCheck1 := types.KernelOrder{
-//			KernelOrderID: 1,
-//			CreateTime:    info.takerOrder.CreateTime,
-//			UpdateTime:    info.takerOrder.UpdateTime,
-//			Amount:        100,
-//			Price:         300,
-//			Left:          0,
-//			FilledTotal:   20000,
-//			Status:        types.CLOSED,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		forCheck2 := types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    info.makerOrders[0].CreateTime,
-//			UpdateTime:    info.makerOrders[0].UpdateTime,
-//			Amount:        -100,
-//			Price:         200,
-//			Left:          0,
-//			FilledTotal:   -20000,
-//			Status:        types.CLOSED,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		assert.Equal(t, forCheck1, info.takerOrder)
-//		assert.Equal(t, forCheck2, info.makerOrders[0])
-//		i++
-//		if i == 1 {
-//			break
-//		}
-//	}
-//	time.Sleep(100 * time.Millisecond)
-//	assert.Equal(t, int64(math.MaxInt64), ask1Price)
-//	assert.Equal(t, int64(math.MinInt64), bid1Price)
-//	assert.Equal(t, 0, ask.Length)
-//	assert.Equal(t, 0, bid.Length)
-//	close(orderChan)
-//}
-//
-//// 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个同价格且同但数量不足的订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
-//func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
-//	// bid
-//	order := &types.KernelOrder{
-//		KernelOrderID: 0,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        100,
-//		Price:         200,
-//		Left:          100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	// ask
-//	order2 := &types.KernelOrder{
-//		KernelOrderID: 1,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        -1000,
-//		Price:         199,
-//		Left:          -1000,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//
-//	go startOrderAcceptor()
-//	orderChan <- order
-//	orderChan <- order2
-//
-//	i := 0
-//	for info := range matchingInfoChan {
-//		// bid
-//		forCheck1 := types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    info.makerOrders[0].CreateTime,
-//			UpdateTime:    info.makerOrders[0].UpdateTime,
-//			Amount:        100,
-//			Price:         200,
-//			Left:          0,
-//			FilledTotal:   20000,
-//			Status:        types.CLOSED,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		// ask
-//		forCheck2 := types.KernelOrder{
-//			KernelOrderID: 1,
-//			CreateTime:    info.takerOrder.CreateTime,
-//			UpdateTime:    info.takerOrder.UpdateTime,
-//			Amount:        -1000,
-//			Price:         199,
-//			Left:          -900,
-//			FilledTotal:   -20000,
-//			Status:        types.OPEN,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		assert.Equal(t, forCheck1, info.makerOrders[0])
-//		assert.Equal(t, forCheck2, info.takerOrder)
-//		i++
-//		if i == 1 {
-//			break
-//		}
-//	}
-//	time.Sleep(100 * time.Millisecond)
-//	assert.Equal(t, int64(199), ask1Price)
-//	assert.Equal(t, int64(math.MinInt64), bid1Price)
-//	assert.Equal(t, 1, ask.Length)
-//	assert.Equal(t, 0, bid.Length)
-//	bucket := ask.Front().value.(*priceBucket)
-//	kernelOrder := bucket.l.Back().Value.(*types.KernelOrder)
-//	assert.Equal(t, int64(-900), kernelOrder.Left)
-//	assert.Equal(t, int64(-20000), kernelOrder.FilledTotal)
-//	close(orderChan)
-//}
-//
-//// 卖单(ask)列表只有一个订单, 买单(bid)匹配到一个同价格且同但数量不足的订单, 匹配完成后ask全空, bid剩余部分创建一个新挂单
-//func Test_matchingDidOrder_MatchOneButIncomplete2(t *testing.T) {
-//	// ask
-//	order := &types.KernelOrder{
-//		KernelOrderID: 0,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        -100,
-//		Price:         200,
-//		Left:          -100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	// bid
-//	order2 := &types.KernelOrder{
-//		KernelOrderID: 1,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        1000,
-//		Price:         300,
-//		Left:          1000,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//
-//	go startOrderAcceptor()
-//	orderChan <- order
-//	orderChan <- order2
-//
-//	i := 0
-//	for info := range matchingInfoChan {
-//		// taker, bid
-//		forCheck1 := types.KernelOrder{
-//			KernelOrderID: 1,
-//			CreateTime:    info.takerOrder.CreateTime,
-//			UpdateTime:    info.takerOrder.UpdateTime,
-//			Amount:        1000,
-//			Price:         300,
-//			Left:          900,
-//			FilledTotal:   20000,
-//			Status:        types.OPEN,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		// maker, ask
-//		forCheck2 := types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    info.makerOrders[0].CreateTime,
-//			UpdateTime:    info.makerOrders[0].UpdateTime,
-//			Amount:        -100,
-//			Price:         200,
-//			Left:          0,
-//			FilledTotal:   -20000,
-//			Status:        types.CLOSED,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		assert.Equal(t, forCheck1, info.takerOrder)
-//		assert.Equal(t, forCheck2, info.makerOrders[0])
-//		i++
-//		if i == 1 {
-//			break
-//		}
-//	}
-//	time.Sleep(100 * time.Millisecond)
-//	assert.Equal(t, int64(math.MaxInt64), ask1Price)
-//	assert.Equal(t, int64(300), bid1Price)
-//	assert.Equal(t, 0, ask.Length)
-//	assert.Equal(t, 1, bid.Length)
-//	bucket := bid.Front().value.(*priceBucket)
-//	kernelOrder := bucket.l.Back().Value.(*types.KernelOrder)
-//	assert.Equal(t, int64(900), kernelOrder.Left)
-//	assert.Equal(t, int64(20000), kernelOrder.FilledTotal)
-//	close(orderChan)
-//}
-//
-//// 买单(bid)列表有多个订单, 卖单(ask)匹配到刚好匹配完所有订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
-//func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
-//	// bid
-//	order := &types.KernelOrder{
-//		KernelOrderID: 1,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        100,
-//		Price:         200,
-//		Left:          100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	// bid2
-//	order2 := &types.KernelOrder{
-//		KernelOrderID: 2,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        150,
-//		Price:         200,
-//		Left:          150,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	// bid3
-//	order3 := &types.KernelOrder{
-//		KernelOrderID: 3,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        110,
-//		Price:         199,
-//		Left:          110,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	// ask
-//	order4 := &types.KernelOrder{
-//		KernelOrderID: 4,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        -400,
-//		Price:         198,
-//		Left:          -400,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//
-//	go startOrderAcceptor()
-//	orderChan <- order
-//	orderChan <- order2
-//	orderChan <- order3
-//	orderChan <- order4
-//
-//	go func() {
-//		time.Sleep(100 * time.Millisecond)
-//		assert.Equal(t, int64(198), ask1Price)
-//		assert.Equal(t, int64(math.MinInt64), bid1Price)
-//		assert.Equal(t, 1, ask.Length)
-//		assert.Equal(t, 0, bid.Length)
-//		close(orderChan)
-//		close(matchingInfoChan)
-//	}()
-//
-//	//i := 0
-//	for info := range matchingInfoChan {
-//		fmt.Println(info.takerOrder)
-//		fmt.Println("------------------")
-//		for i := range info.makerOrders {
-//			fmt.Println(info.makerOrders[i])
-//		}
-//		fmt.Println("##################")
-//
-//		//forCheck1 := types.KernelOrder{
-//		//	KernelOrderID: 0,
-//		//	CreateTime:    info.makerOrders[0].CreateTime,
-//		//	UpdateTime:    info.makerOrders[0].UpdateTime,
-//		//	Amount:        100,
-//		//	Price:         200,
-//		//	Left:          0,
-//		//	FilledTotal:   20000,
-//		//	Status:        types.CLOSED,
-//		//	Type:          0,
-//		//	TimeInForce:   0,
-//		//	Id:            0,
-//		//}
-//		//forCheck2 := types.KernelOrder{
-//		//	KernelOrderID: 1,
-//		//	CreateTime:    info.takerOrder.CreateTime,
-//		//	UpdateTime:    info.takerOrder.UpdateTime,
-//		//	Amount:        -100,
-//		//	Price:         200,
-//		//	Left:          0,
-//		//	FilledTotal:   -20000,
-//		//	Status:        types.CLOSED,
-//		//	Type:          0,
-//		//	TimeInForce:   0,
-//		//	Id:            0,
-//		//}
-//		//assert.Equal(t, forCheck1, info.makerOrders[0])
-//		//assert.Equal(t, forCheck2, info.takerOrder)
-//		//i++
-//		//if i == 1 {
-//		//	break
-//		//}
-//	}
-//
-//}
-//
-//// 买单(bid)列表有多个(2_000_000)订单, 卖单(ask)匹配到刚好匹配完所有订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
-//// test clearBucket
-//func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
-//	testSize := 2_000_000
-//	//testSize := 100_000
-//	asks := make([]*types.KernelOrder, 0, testSize)
-//	//bids := make([]*types.KernelOrder, 0, testSize)
-//	var askSize int64 = 0
-//	//var bidSize int64 = 0
-//	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-//	for i := 0; i < testSize; i++ {
-//		// 1 - 1000, price
-//		i2 := r.Int63n(int64(1000)) + 1
-//		//i2 := int64(i + 1)
-//		// 1 - 100
-//		i3 := r.Int63n(int64(100)) + 1
-//		order := &types.KernelOrder{
-//			KernelOrderID: 0,
-//			CreateTime:    0,
-//			UpdateTime:    0,
-//			Amount:        -i3,
-//			Price:         i2,
-//			Left:          -i3,
-//			FilledTotal:   0,
-//			Status:        0,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		asks = append(asks, order)
-//		askSize -= i3
-//	}
-//
-//	go startOrderAcceptor()
-//
-//	takerVolumeMap := make(map[uint64]int64)
-//	makerVolumeMap := make(map[uint64]int64)
-//	go func() {
-//		for {
-//			info := <-matchingInfoChan
-//			var checkSum int64 = 0
-//			for _, v := range info.matchedSizeMap {
-//				assert.NotEqual(t, int64(0), v)
-//				checkSum += v
-//			}
-//			assert.Equal(t, int64(0), checkSum)
-//
-//			//fmt.Println(*info)
-//
-//			// taker
-//			takerOrder := info.takerOrder
-//			i, ok := takerVolumeMap[takerOrder.KernelOrderID]
-//			if ok {
-//				if i < 0 && i > takerOrder.Amount-takerOrder.Left {
-//					takerVolumeMap[takerOrder.KernelOrderID] = takerOrder.Amount - takerOrder.Left
-//				} else if i > 0 && i < takerOrder.Amount-takerOrder.Left {
-//					takerVolumeMap[takerOrder.KernelOrderID] = takerOrder.Amount - takerOrder.Left
-//				}
-//			} else {
-//				takerVolumeMap[takerOrder.KernelOrderID] = takerOrder.Amount - takerOrder.Left
-//			}
-//
-//			makerOrders := info.makerOrders
-//			for i2 := range makerOrders {
-//				mapV, ok := makerVolumeMap[makerOrders[i2].KernelOrderID]
-//				if ok {
-//					if mapV < 0 && mapV > makerOrders[i2].Amount-makerOrders[i2].Left {
-//						makerVolumeMap[makerOrders[i2].KernelOrderID] = makerOrders[i2].Amount - makerOrders[i2].Left
-//					} else if mapV > 0 && mapV < makerOrders[i2].Amount-makerOrders[i2].Left {
-//						makerVolumeMap[makerOrders[i2].KernelOrderID] = makerOrders[i2].Amount - makerOrders[i2].Left
-//					}
-//				} else {
-//					makerVolumeMap[makerOrders[i2].KernelOrderID] = makerOrders[i2].Amount - makerOrders[i2].Left
-//				}
-//			}
-//
-//		}
-//	}()
-//
-//	for i := range asks {
-//		orderChan <- asks[i]
-//	}
-//
-//	// bid, 一个大单吃完
-//	order2 := &types.KernelOrder{
-//		KernelOrderID: 0,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        math.MaxInt64,
-//		//Amount:        200,
-//		Price: 500000,
-//		Left:  math.MaxInt64,
-//		//Left:          200,
-//		FilledTotal: 0,
-//		Status:      0,
-//		Type:        0,
-//		TimeInForce: 0,
-//		Id:          0,
-//	}
-//	orderChan <- order2
-//	for ask1Price != math.MaxInt64 {
-//		time.Sleep(time.Millisecond * 100)
-//		//println(ask1Price)
-//	}
-//	assert.Equal(t, int64(math.MaxInt64), ask1Price)
-//	assert.Equal(t, int64(500000), bid1Price)
-//	assert.Equal(t, 0, ask.Length)
-//	assert.Equal(t, 1, bid.Length)
-//	assert.Equal(t, math.MaxInt64+askSize, bid.Front().value.(*priceBucket).Left)
-//	var takerSum int64
-//	for _, v := range takerVolumeMap {
-//		takerSum += v
-//	}
-//	var makerSum int64
-//	for _, v := range makerVolumeMap {
-//		makerSum += v
-//	}
-//	assert.Equal(t, takerSum, -askSize)
-//	assert.Equal(t, takerSum, -makerSum)
-//	assert.Equal(t, makerSum, askSize)
-//	//fmt.Println("takerSum : ", takerSum)
-//	//fmt.Println("makerSum : ", makerSum)
-//	//fmt.Println("askSize : ", askSize)
-//}
-//
+// 卖单(ask)列表只有一个订单, 买单(bid)匹配到一个更高价格且同数量订单, 匹配完成后ask/bid全空
+func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
+	// ask
+	order := &types.KernelOrder{
+		KernelOrderID: 0,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        -100,
+		Price:         200,
+		Left:          -100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	// bid
+	order2 := &types.KernelOrder{
+		KernelOrderID: 1,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        100,
+		Price:         300,
+		Left:          100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+
+	acceptor := initAcceptor(1, "test")
+	go acceptor.startOrderAcceptor()
+	acceptor.startDummyOrderConfirmedChan()
+	acceptor.newOrderChan <- order
+	acceptor.newOrderChan <- order2
+
+	i := 0
+	for info := range acceptor.kernel.matchedInfoChan {
+		forCheck1 := types.KernelOrder{
+			KernelOrderID: info.takerOrder.KernelOrderID,
+			CreateTime:    info.takerOrder.CreateTime,
+			UpdateTime:    info.takerOrder.UpdateTime,
+			Amount:        100,
+			Price:         300,
+			Left:          0,
+			FilledTotal:   20000,
+			Status:        types.CLOSED,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		forCheck2 := types.KernelOrder{
+			KernelOrderID: info.makerOrders[0].KernelOrderID,
+			CreateTime:    info.makerOrders[0].CreateTime,
+			UpdateTime:    info.makerOrders[0].UpdateTime,
+			Amount:        -100,
+			Price:         200,
+			Left:          0,
+			FilledTotal:   -20000,
+			Status:        types.CLOSED,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+
+		assert.Equal(t, forCheck1, info.takerOrder)
+		assert.Equal(t, forCheck2, info.makerOrders[0])
+		i++
+		if i == 1 {
+			break
+		}
+	}
+	time.Sleep(10 * time.Millisecond)
+	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
+	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
+	assert.Equal(t, 0, acceptor.kernel.ask.Length)
+	assert.Equal(t, 0, acceptor.kernel.bid.Length)
+}
+
+// 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个同价格且同但数量不足的订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
+func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
+	// bid
+	order := &types.KernelOrder{
+		KernelOrderID: 0,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        100,
+		Price:         200,
+		Left:          100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	// ask
+	order2 := &types.KernelOrder{
+		KernelOrderID: 1,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        -1000,
+		Price:         199,
+		Left:          -1000,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+
+	acceptor := initAcceptor(1, "test")
+	go acceptor.startOrderAcceptor()
+	acceptor.startDummyOrderConfirmedChan()
+	acceptor.newOrderChan <- order
+	acceptor.newOrderChan <- order2
+
+	i := 0
+	for info := range acceptor.kernel.matchedInfoChan {
+		// bid
+		forCheck1 := types.KernelOrder{
+			KernelOrderID: info.makerOrders[0].KernelOrderID,
+			CreateTime:    info.makerOrders[0].CreateTime,
+			UpdateTime:    info.makerOrders[0].UpdateTime,
+			Amount:        100,
+			Price:         200,
+			Left:          0,
+			FilledTotal:   20000,
+			Status:        types.CLOSED,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		// ask
+		forCheck2 := types.KernelOrder{
+			KernelOrderID: info.takerOrder.KernelOrderID,
+			CreateTime:    info.takerOrder.CreateTime,
+			UpdateTime:    info.takerOrder.UpdateTime,
+			Amount:        -1000,
+			Price:         199,
+			Left:          -900,
+			FilledTotal:   -20000,
+			Status:        types.OPEN,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		assert.Equal(t, forCheck1, info.makerOrders[0])
+		assert.Equal(t, forCheck2, info.takerOrder)
+		i++
+		if i == 1 {
+			break
+		}
+	}
+	time.Sleep(10 * time.Millisecond)
+	assert.Equal(t, int64(199), acceptor.kernel.ask1Price)
+	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
+	assert.Equal(t, 1, acceptor.kernel.ask.Length)
+	assert.Equal(t, 0, acceptor.kernel.bid.Length)
+	bucket := acceptor.kernel.ask.Front().value.(*priceBucket)
+	kernelOrder := bucket.l.Back().Value.(*types.KernelOrder)
+	assert.Equal(t, int64(-900), kernelOrder.Left)
+	assert.Equal(t, int64(-20000), kernelOrder.FilledTotal)
+}
+
+// 卖单(ask)列表只有一个订单, 买单(bid)匹配到一个同价格且同但数量不足的订单, 匹配完成后ask全空, bid剩余部分创建一个新挂单
+func Test_matchingDidOrder_MatchOneButIncomplete2(t *testing.T) {
+	// ask
+	order := &types.KernelOrder{
+		KernelOrderID: 0,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        -100,
+		Price:         200,
+		Left:          -100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	// bid
+	order2 := &types.KernelOrder{
+		KernelOrderID: 1,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        1000,
+		Price:         300,
+		Left:          1000,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+
+	acceptor := initAcceptor(1, "test")
+	go acceptor.startOrderAcceptor()
+	acceptor.startDummyOrderConfirmedChan()
+	acceptor.newOrderChan <- order
+	acceptor.newOrderChan <- order2
+
+	i := 0
+	for info := range acceptor.kernel.matchedInfoChan {
+		// taker, bid
+		forCheck1 := types.KernelOrder{
+			KernelOrderID: info.takerOrder.KernelOrderID,
+			CreateTime:    info.takerOrder.CreateTime,
+			UpdateTime:    info.takerOrder.UpdateTime,
+			Amount:        1000,
+			Price:         300,
+			Left:          900,
+			FilledTotal:   20000,
+			Status:        types.OPEN,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		// maker, ask
+		forCheck2 := types.KernelOrder{
+			KernelOrderID: info.makerOrders[0].KernelOrderID,
+			CreateTime:    info.makerOrders[0].CreateTime,
+			UpdateTime:    info.makerOrders[0].UpdateTime,
+			Amount:        -100,
+			Price:         200,
+			Left:          0,
+			FilledTotal:   -20000,
+			Status:        types.CLOSED,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		assert.Equal(t, forCheck1, info.takerOrder)
+		assert.Equal(t, forCheck2, info.makerOrders[0])
+		i++
+		if i == 1 {
+			break
+		}
+	}
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
+	assert.Equal(t, int64(300), acceptor.kernel.bid1Price)
+	assert.Equal(t, 0, acceptor.kernel.ask.Length)
+	assert.Equal(t, 1, acceptor.kernel.bid.Length)
+	bucket := acceptor.kernel.bid.Front().value.(*priceBucket)
+	kernelOrder := bucket.l.Back().Value.(*types.KernelOrder)
+	assert.Equal(t, int64(900), kernelOrder.Left)
+	assert.Equal(t, int64(20000), kernelOrder.FilledTotal)
+}
+
+// 买单(bid)列表有多个订单, 卖单(ask)匹配完所有订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
+func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
+	// bid
+	order := &types.KernelOrder{
+		KernelOrderID: 1,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        100,
+		Price:         200,
+		Left:          100,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	// bid2
+	order2 := &types.KernelOrder{
+		KernelOrderID: 2,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        150,
+		Price:         200,
+		Left:          150,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	// bid3
+	order3 := &types.KernelOrder{
+		KernelOrderID: 3,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        110,
+		Price:         199,
+		Left:          110,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+	// ask
+	order4 := &types.KernelOrder{
+		KernelOrderID: 4,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        -400,
+		Price:         198,
+		Left:          -400,
+		FilledTotal:   0,
+		Status:        0,
+		Type:          0,
+		TimeInForce:   0,
+		Id:            0,
+	}
+
+	acceptor := initAcceptor(1, "test")
+
+	go acceptor.startOrderAcceptor()
+	acceptor.startDummyOrderConfirmedChan()
+	acceptor.kernel.startDummyMatchedInfoChan()
+	acceptor.newOrderChan <- order
+	acceptor.newOrderChan <- order2
+	acceptor.newOrderChan <- order3
+	acceptor.newOrderChan <- order4
+
+	time.Sleep(10 * time.Millisecond)
+	assert.Equal(t, int64(198), acceptor.kernel.ask1Price)
+	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
+	assert.Equal(t, 1, acceptor.kernel.ask.Length)
+	assert.Equal(t, 0, acceptor.kernel.bid.Length)
+	left := acceptor.kernel.ask.Front().value.(*priceBucket).Left
+	assert.Equal(t, int64(-40), left)
+}
+
+// 买单(bid)列表有多个(200_000)订单, 卖单(ask)匹配到刚好匹配完所有订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
+// test clearBucket
+func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
+	testSize := 200_000
+	asks := make([]*types.KernelOrder, 0, testSize)
+	//bids := make([]*types.KernelOrder, 0, testSize)
+	var askSize int64 = 0
+	//var bidSize int64 = 0
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < testSize; i++ {
+		// 1 - 1000, price
+		i2 := r.Int63n(int64(1000)) + 1
+		//i2 := int64(i + 1)
+		// 1 - 100
+		i3 := r.Int63n(int64(100)) + 1
+		order := &types.KernelOrder{
+			KernelOrderID: 0,
+			CreateTime:    0,
+			UpdateTime:    0,
+			Amount:        -i3,
+			Price:         i2,
+			Left:          -i3,
+			FilledTotal:   0,
+			Status:        0,
+			Type:          0,
+			TimeInForce:   0,
+			Id:            0,
+		}
+		asks = append(asks, order)
+		askSize -= i3
+	}
+	acceptor := initAcceptor(1, "test")
+	go acceptor.startOrderAcceptor()
+	acceptor.startDummyOrderConfirmedChan()
+
+	takerVolumeMap := make(map[uint64]int64)
+	makerVolumeMap := make(map[uint64]int64)
+	go func() {
+		for {
+			info := <-acceptor.kernel.matchedInfoChan
+			var checkSum int64 = 0
+			for _, v := range info.matchedSizeMap {
+				assert.NotEqual(t, int64(0), v)
+				checkSum += v
+			}
+			assert.Equal(t, int64(0), checkSum)
+
+			//fmt.Println(*info)
+
+			// taker
+			takerOrder := info.takerOrder
+			i, ok := takerVolumeMap[takerOrder.KernelOrderID]
+			if ok {
+				if i < 0 && i > takerOrder.Amount-takerOrder.Left {
+					takerVolumeMap[takerOrder.KernelOrderID] = takerOrder.Amount - takerOrder.Left
+				} else if i > 0 && i < takerOrder.Amount-takerOrder.Left {
+					takerVolumeMap[takerOrder.KernelOrderID] = takerOrder.Amount - takerOrder.Left
+				}
+			} else {
+				takerVolumeMap[takerOrder.KernelOrderID] = takerOrder.Amount - takerOrder.Left
+			}
+
+			makerOrders := info.makerOrders
+			for i2 := range makerOrders {
+				mapV, ok := makerVolumeMap[makerOrders[i2].KernelOrderID]
+				if ok {
+					if mapV < 0 && mapV > makerOrders[i2].Amount-makerOrders[i2].Left {
+						makerVolumeMap[makerOrders[i2].KernelOrderID] = makerOrders[i2].Amount - makerOrders[i2].Left
+					} else if mapV > 0 && mapV < makerOrders[i2].Amount-makerOrders[i2].Left {
+						makerVolumeMap[makerOrders[i2].KernelOrderID] = makerOrders[i2].Amount - makerOrders[i2].Left
+					}
+				} else {
+					makerVolumeMap[makerOrders[i2].KernelOrderID] = makerOrders[i2].Amount - makerOrders[i2].Left
+				}
+			}
+
+		}
+	}()
+
+	for i := range asks {
+		acceptor.newOrderChan <- asks[i]
+	}
+
+	// bid, 一个大单吃完
+	order2 := &types.KernelOrder{
+		KernelOrderID: 0,
+		CreateTime:    0,
+		UpdateTime:    0,
+		Amount:        math.MaxInt64,
+		//Amount:        200,
+		Price: 500000,
+		Left:  math.MaxInt64,
+		//Left:          200,
+		FilledTotal: 0,
+		Status:      0,
+		Type:        0,
+		TimeInForce: 0,
+		Id:          0,
+	}
+	acceptor.newOrderChan <- order2
+	for acceptor.kernel.ask1Price != math.MaxInt64 {
+		time.Sleep(time.Millisecond * 100)
+		//println(ask1Price)
+	}
+	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
+	assert.Equal(t, int64(500000), acceptor.kernel.bid1Price)
+	assert.Equal(t, 0, acceptor.kernel.ask.Length)
+	assert.Equal(t, 1, acceptor.kernel.bid.Length)
+	assert.Equal(t, math.MaxInt64+askSize, acceptor.kernel.bid.Front().value.(*priceBucket).Left)
+	var takerSum int64
+	for _, v := range takerVolumeMap {
+		takerSum += v
+	}
+	var makerSum int64
+	for _, v := range makerVolumeMap {
+		makerSum += v
+	}
+	assert.Equal(t, takerSum, -askSize)
+	assert.Equal(t, takerSum, -makerSum)
+	assert.Equal(t, makerSum, askSize)
+}
+
 // 100_000个随机订单, 50_000(bid) & 50_000(ask)
 func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
-	testSize := 12_500 // * 8
+	testSize := 12_5 // * 8
 	asks := make([]*types.KernelOrder, 0, testSize)
 	bids := make([]*types.KernelOrder, 0, testSize)
 	var askSize int64 = 0
@@ -1109,7 +1071,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 
 	go func() {
 		for {
-			<-acceptor.orderAcceptedChan
+			<-acceptor.orderConfirmedChan
 		}
 	}()
 
@@ -1205,18 +1167,19 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	acceptor.kernel.takeSnapshot("test")
 	et := time.Now().UnixNano()
 	fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
+	orderLogReader(acceptor.f)
 }
 
 func TestRestoreKernel(t *testing.T) {
-	st := time.Now().UnixNano()
-	k, b := restoreKernel("./orderbook_snapshot/test_insert/1594269823/")
-	et := time.Now().UnixNano()
-	fmt.Println("Restore finished in ", (et-st)/(1000*1000), " ms")
-	fmt.Println(b)
-	fmt.Println(k.ask.Length)
-	fmt.Println(k.bid.Length)
-	fmt.Println(k.ask1Price)
-	fmt.Println(k.bid1Price)
+	//st := time.Now().UnixNano()
+	//k, b := restoreKernel("./orderbook_snapshot/test_insert/1594269823/")
+	//et := time.Now().UnixNano()
+	//fmt.Println("Restore finished in ", (et-st)/(1000*1000), " ms")
+	//fmt.Println(b)
+	//fmt.Println(k.ask.Length)
+	//fmt.Println(k.bid.Length)
+	//fmt.Println(k.ask1Price)
+	//fmt.Println(k.bid1Price)
 
 }
 
@@ -1252,19 +1215,28 @@ func Test_kernel_cancelOrder(t *testing.T) {
 
 	acceptor := initAcceptor(1, "test")
 	go acceptor.startOrderAcceptor()
+	acceptor.kernel.startDummyMatchedInfoChan()
 
-	acceptor.newOrderChan <- order
-	acceptor.newOrderChan <- order2
+	go func() {
+		acceptor.newOrderChan <- order
+		acceptor.newOrderChan <- order2
+	}()
+
+	ids := make([]*types.KernelOrder, 0, 2)
+	for i := 0; i < 2; i++ {
+		v := <-acceptor.orderConfirmedChan
+		ids = append(ids, v)
+	}
+
+	go func() {
+		for {
+			<-acceptor.orderConfirmedChan
+		}
+	}()
 
 	time.Sleep(time.Millisecond * 10)
 	assert.Equal(t, 1, acceptor.kernel.ask.Length)
 	assert.Equal(t, 1, acceptor.kernel.bid.Length)
-
-	ids := make([]*types.KernelOrder, 0, 2)
-	for i := 0; i < 2; i++ {
-		v := <-acceptor.orderAcceptedChan
-		ids = append(ids, v)
-	}
 
 	for i := range ids {
 		ids[i].Amount = 0
@@ -1275,5 +1247,4 @@ func Test_kernel_cancelOrder(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
 	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
-
 }
