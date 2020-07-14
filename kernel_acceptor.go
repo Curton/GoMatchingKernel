@@ -7,6 +7,7 @@ package exchangeKernel
 
 import (
 	"exchangeKernel/types"
+	"log"
 	"math/rand"
 	"os"
 	"time"
@@ -29,20 +30,6 @@ type scheduler struct {
 // 判断 限价单 与 市价单
 func (s *scheduler) startOrderAcceptor() {
 	for recv := range s.newOrderChan {
-		// cancel order
-		if recv.Amount == 0 {
-			recv.Status = types.CANCELLED
-			// write log
-			if saveOrderLog {
-				if writeOrderLog(s.f, s.acceptorDescription, recv) != true {
-					continue
-				}
-			}
-			// accept order signal
-			s.orderConfirmedChan <- recv
-			s.kernel.cancelOrder(recv)
-			continue
-		}
 		kernelOrder := *recv
 		kernelOrder.CreateTime = time.Now().UnixNano()
 		uint64R := uint64(s.r.Int63())
@@ -50,9 +37,18 @@ func (s *scheduler) startOrderAcceptor() {
 		// write log
 		if saveOrderLog {
 			if writeOrderLog(s.f, s.acceptorDescription, recv) != true {
-				continue
+				log.Panicln("Err in write order log.")
 			}
 		}
+		// cancel order
+		if recv.Amount == 0 {
+			recv.Status = types.CANCELLED
+			// accept order signal
+			s.orderConfirmedChan <- recv
+			s.kernel.cancelOrder(recv)
+			continue
+		}
+
 		// accept order signal
 		tmp := kernelOrder
 		s.orderConfirmedChan <- &tmp
@@ -91,31 +87,27 @@ func (s *scheduler) startRedoOrderAcceptor() {
 			s.redoKernel.cancelOrder(recv)
 			continue
 		}
-		kernelOrder := *recv
-		kernelOrder.CreateTime = time.Now().UnixNano()
-		uint64R := uint64(s.r.Int63())
-		kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | s.serverMask // use the first 16 bits as server Id
 
-		if kernelOrder.Type == types.LIMIT {
+		if recv.Type == types.LIMIT {
 			// limit order, 限价单
-			if kernelOrder.Amount > 0 {
+			if recv.Amount > 0 {
 				// bid order
-				if kernelOrder.Price < s.redoKernel.ask1Price {
+				if recv.Price < s.redoKernel.ask1Price {
 					// 不能成交,直接插入
-					s.redoKernel.insertCheckedOrder(&kernelOrder)
+					s.redoKernel.insertCheckedOrder(recv)
 				} else {
-					s.redoKernel.matchingOrder(s.redoKernel.ask, &kernelOrder, false)
+					s.redoKernel.matchingOrder(s.redoKernel.ask, recv, false)
 				}
 			} else {
 				// ask order
-				if kernelOrder.Price > s.redoKernel.bid1Price {
+				if recv.Price > s.redoKernel.bid1Price {
 					// 不能成交,直接插入
-					s.redoKernel.insertCheckedOrder(&kernelOrder)
+					s.redoKernel.insertCheckedOrder(recv)
 				} else {
-					s.redoKernel.matchingOrder(s.redoKernel.bid, &kernelOrder, true)
+					s.redoKernel.matchingOrder(s.redoKernel.bid, recv, true)
 				}
 			}
-		} else if kernelOrder.Type == types.MARKET {
+		} else if recv.Type == types.MARKET {
 			// 市价单
 			// todo
 		}
@@ -137,9 +129,9 @@ func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 
 func (s *scheduler) enableRedoKernel() {
 	s.redoKernel = newKernel()
+	s.redoOrderChan = make(chan *types.KernelOrder)
 	go s.startRedoOrderAcceptor()
 	s.redoKernel.startDummyMatchedInfoChan()
-	time.Sleep(time.Second)
 	go orderLogReader(s)
 }
 

@@ -196,7 +196,7 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 	assert.Equal(t, bidSize, checkBidSize)
 
 	st := time.Now().UnixNano()
-	k.takeSnapshot("test_insert")
+	k.takeSnapshot("test_insert", nil)
 	et := time.Now().UnixNano()
 	fmt.Println("Snapshot finished in ", (et-st)/(1000*1000), " ms")
 }
@@ -975,7 +975,7 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 
 // 100_000个随机订单, 50_000(bid) & 50_000(ask)
 func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
-	testSize := 12_5 // * 8
+	testSize := 12_500 // * 8
 	asks := make([]*types.KernelOrder, 0, testSize)
 	bids := make([]*types.KernelOrder, 0, testSize)
 	var askSize int64 = 0
@@ -1169,7 +1169,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	//acceptor.kernel.takeSnapshot("test")
 	//et := time.Now().UnixNano()
 	//fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 }
 
 func TestRestoreKernel(t *testing.T) {

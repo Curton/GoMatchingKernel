@@ -8,6 +8,7 @@ package exchangeKernel
 import (
 	"container/list"
 	"exchangeKernel/types"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math"
@@ -54,7 +55,7 @@ type orderBookItem struct {
 }
 
 // should stop kernel before calling this func
-func (k *kernel) takeSnapshot(description string) {
+func (k *kernel) takeSnapshot(description string, lastKernelOrder *types.KernelOrder) {
 	uTime := time.Now().Unix()
 	uTimeFmt := strconv.FormatInt(uTime, 10)
 	askBasePath := kernelSnapshotPath + description + "/" + uTimeFmt + "/ask/"
@@ -105,7 +106,7 @@ func (k *kernel) takeSnapshot(description string) {
 
 	wg.Wait()
 	f, _ := os.OpenFile(kernelSnapshotPath+description+"/"+uTimeFmt+"/finished.log", os.O_EXCL|os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0644)
-	_, _ = f.WriteString("If you see this file, it means snapshot is completed.")
+	_, _ = f.WriteString(fmt.Sprintln(*lastKernelOrder) + "If you see this file, it means snapshot is completed.")
 	_ = f.Close()
 }
 

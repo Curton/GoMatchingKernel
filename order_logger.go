@@ -163,14 +163,18 @@ func orderLogReader(s *scheduler) {
 	size := len(sample)
 	tmp := make([]byte, size)
 	var off int64 = 0
+	var lastKernelOrder *types.KernelOrder
 	for {
 		_, err := s.f[0].ReadAt(tmp, off)
 		if err != nil {
 			if err == io.EOF {
 				// stop kernel
 				time.Sleep(time.Second)
-				log.Println("take snapshot")
-				s.redoKernel.takeSnapshot("redo")
+				st := time.Now().UnixNano()
+				s.redoKernel.takeSnapshot("redo", lastKernelOrder)
+				et := time.Now().UnixNano()
+				log.Println("redo snapshot finished in ", (et-st)/(1000*1000), " ms")
+				time.Sleep(redoSnapshotInterval)
 				continue
 			}
 			log.Println(err.Error())
@@ -180,6 +184,6 @@ func orderLogReader(s *scheduler) {
 		off += int64(size)
 		o := readOrderBinary(tmp)
 		s.redoOrderChan <- o
-		log.Println(o)
+		lastKernelOrder = o
 	}
 }
