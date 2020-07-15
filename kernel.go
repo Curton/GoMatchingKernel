@@ -54,6 +54,31 @@ type orderBookItem struct {
 	Size  int64
 }
 
+func (k *kernel) depth() *orderBook {
+	a := make([]orderBookItem, 0, k.ask.Length)
+	for e1 := k.ask.Front(); e1 != nil; e1 = e1.Next() {
+		bucket := e1.value.(*priceBucket)
+		a = append(a, orderBookItem{
+			Price: bucket.l.Front().Value.(*types.KernelOrder).Price,
+			Size:  bucket.Left,
+		})
+	}
+
+	b := make([]orderBookItem, 0, k.bid.Length)
+	for e2 := k.bid.Front(); e2 != nil; e2 = e2.Next() {
+		bucket := e2.value.(*priceBucket)
+		b = append(b, orderBookItem{
+			Price: bucket.l.Front().Value.(*types.KernelOrder).Price,
+			Size:  bucket.Left,
+		})
+	}
+
+	return &orderBook{
+		ask: a,
+		bid: b,
+	}
+}
+
 // should stop kernel before calling this func
 func (k *kernel) takeSnapshot(description string, lastKernelOrder *types.KernelOrder) {
 	uTime := time.Now().Unix()
@@ -488,7 +513,7 @@ func restoreKernel(path string) (*kernel, bool) {
 			for j := l.Front(); j != nil; j = j.Next() {
 				left += j.Value.(*types.KernelOrder).Left
 			}
-			k.bid.Set(float64(price), &priceBucket{
+			k.bid.Set(float64(-price), &priceBucket{
 				l:    l,
 				Left: 0,
 			})

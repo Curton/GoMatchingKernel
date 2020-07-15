@@ -1169,20 +1169,24 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	//acceptor.kernel.takeSnapshot("test")
 	//et := time.Now().UnixNano()
 	//fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
-	time.Sleep(5 * time.Second)
+	time.Sleep(3 * time.Second)
+	//log.Println(*acceptor.kernel.depth())
+	fmt.Println(acceptor.kernel.ask1Price)
+	fmt.Println(acceptor.kernel.bid1Price)
+	fmt.Println(acceptor.redoKernel.ask1Price)
+	fmt.Println(acceptor.redoKernel.bid1Price)
 }
 
 func TestRestoreKernel(t *testing.T) {
-	//st := time.Now().UnixNano()
-	//k, b := restoreKernel("./orderbook_snapshot/test_insert/1594269823/")
-	//et := time.Now().UnixNano()
-	//fmt.Println("Restore finished in ", (et-st)/(1000*1000), " ms")
-	//fmt.Println(b)
-	//fmt.Println(k.ask.Length)
-	//fmt.Println(k.bid.Length)
-	//fmt.Println(k.ask1Price)
-	//fmt.Println(k.bid1Price)
-
+	st := time.Now().UnixNano()
+	k, b := restoreKernel("./orderbook_snapshot/redo/1594783392/")
+	et := time.Now().UnixNano()
+	fmt.Println("Restore finished in ", (et-st)/(1000*1000), " ms")
+	fmt.Println(b)
+	fmt.Println(k.ask.Length)
+	fmt.Println(k.bid.Length)
+	fmt.Println(k.ask1Price)
+	fmt.Println(k.bid1Price)
 }
 
 func Test_kernel_cancelOrder(t *testing.T) {

@@ -12,5 +12,5 @@ var (
 	kernelSnapshotPath   = "./orderbook_snapshot/"
 	kernelOrderLogCache  = true
 	saveOrderLog         = true
-	redoSnapshotInterval = time.Second * 30
+	redoSnapshotInterval = time.Second
 )
