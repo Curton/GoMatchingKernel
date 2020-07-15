@@ -34,43 +34,6 @@ func writeOrderLog(f *[1]*os.File, acceptorDescription string, kernelOrder *type
 		f[0] = f2
 	}
 
-	//if kernelOrderLogCache {
-	//	cachedOrder, ok := cachedOrderMap[acceptorDescription]
-	//	if ok {
-	//		b1 := getBytes(&cachedOrder)
-	//		b2 := getBytes(kernelOrder)
-	//		buf := make([]byte, 0, len(b1)+len(b2))
-	//		buf = append(buf, b1...)
-	//		buf = append(buf, b2...)
-	//		if _, err := f[0].Write(buf); err != nil {
-	//			return false
-	//		}
-	//		delete(cachedOrderMap, acceptorDescription)
-	//	} else {
-	//		i, ok := lastTimeMap[acceptorDescription]
-	//		if ok {
-	//			if kernelOrder.CreateTime-i < 3_000_000 {
-	//				lastTimeMap[acceptorDescription] = kernelOrder.CreateTime
-	//				cachedOrderMap[acceptorDescription] = *kernelOrder
-	//				return true
-	//			} else {
-	//				if _, err := f[0].Write(getBytes(kernelOrder)); err != nil {
-	//					return false
-	//				}
-	//			}
-	//		} else {
-	//			lastTimeMap[acceptorDescription] = kernelOrder.CreateTime
-	//			if _, err := f[0].Write(getBytes(kernelOrder)); err != nil {
-	//				return false
-	//			}
-	//		}
-	//	}
-	//} else {
-	//	if _, err := f[0].Write(getBytes(kernelOrder)); err != nil {
-	//		return false
-	//	}
-	//}
-
 	if _, err := f[0].Write(getOrderBinary(kernelOrder)); err != nil {
 		log.Println(err.Error())
 		return false

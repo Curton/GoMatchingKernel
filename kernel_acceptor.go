@@ -15,18 +15,20 @@ import (
 )
 
 type scheduler struct {
-	kernel               *kernel
-	redoKernel           *kernel
-	newOrderChan         chan *types.KernelOrder
-	redoOrderChan        chan *types.KernelOrder
-	orderConfirmedChan   chan *types.KernelOrder
-	requestQuotationChan chan bool
-	serverId             uint64
-	serverMask           uint64
-	r                    *rand.Rand
-	acceptorDescription  string
-	f                    *[1]*os.File // kernelOrder logger file
+	kernel              *kernel
+	redoKernel          *kernel
+	newOrderChan        chan *types.KernelOrder
+	redoOrderChan       chan *types.KernelOrder
+	orderReceivedChan   chan *types.KernelOrder
+	internalRequestChan chan internalRequestCode
+	serverId            uint64
+	serverMask          uint64
+	acceptorDescription string
+	r                   *rand.Rand
+	f                   *[1]*os.File // kernelOrder logger file
 }
+
+type internalRequestCode uint16
 
 // should run in go routine
 // 判断 限价单 与 市价单
@@ -48,14 +50,14 @@ func (s *scheduler) startOrderAcceptor() {
 			if recv.Amount == 0 {
 				recv.Status = types.CANCELLED
 				// accept order signal
-				s.orderConfirmedChan <- recv
+				s.orderReceivedChan <- recv
 				s.kernel.cancelOrder(recv)
 				continue
 			}
 
 			// accept order signal
 			tmp := kernelOrder
-			s.orderConfirmedChan <- &tmp
+			s.orderReceivedChan <- &tmp
 
 			if kernelOrder.Type == types.LIMIT {
 				// limit order, 限价单
@@ -106,7 +108,7 @@ func (s *scheduler) startOrderAcceptor() {
 				}
 			}
 
-		case rq := <-s.requestQuotationChan:
+		case rq := <-s.internalRequestChan:
 			_ = rq
 		}
 	}
@@ -171,7 +173,7 @@ func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 	return &scheduler{
 		kernel:              newKernel(),
 		newOrderChan:        make(chan *types.KernelOrder, 1),
-		orderConfirmedChan:  make(chan *types.KernelOrder),
+		orderReceivedChan:   make(chan *types.KernelOrder),
 		serverId:            serverId,
 		serverMask:          serverId << (64 - 16 - 1),
 		r:                   rand.New(rand.NewSource(time.Now().UnixNano())),
@@ -191,7 +193,7 @@ func (s *scheduler) enableRedoKernel() {
 func (s *scheduler) startDummyOrderConfirmedChan() {
 	go func() {
 		for {
-			<-s.orderConfirmedChan
+			<-s.orderReceivedChan
 		}
 	}()
 }

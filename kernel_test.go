@@ -10,6 +10,7 @@ import (
 	"fmt"
 	_ "fmt"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"math"
 	_ "math"
 	"math/rand"
@@ -196,90 +197,10 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 	assert.Equal(t, bidSize, checkBidSize)
 
 	st := time.Now().UnixNano()
-	k.takeSnapshot("test_insert", nil)
+	k.takeSnapshot("test_insert", bids[len(bids)-1])
 	et := time.Now().UnixNano()
 	fmt.Println("Snapshot finished in ", (et-st)/(1000*1000), " ms")
 }
-
-//func Test_redoLog(t *testing.T) {
-//	// bid
-//	order := &types.KernelOrder{
-//		KernelOrderID: 0,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        100,
-//		Price:         200,
-//		Left:          100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//	// ask
-//	order2 := &types.KernelOrder{
-//		KernelOrderID: 1,
-//		CreateTime:    0,
-//		UpdateTime:    0,
-//		Amount:        -100,
-//		Price:         200,
-//		Left:          -100,
-//		FilledTotal:   0,
-//		Status:        0,
-//		Type:          0,
-//		TimeInForce:   0,
-//		Id:            0,
-//	}
-//
-//	acceptor := initAcceptor(1, "test")
-//	//acceptor.enableRedoKernel()
-//	go acceptor.startOrderAcceptor()
-//	acceptor.startDummyOrderConfirmedChan()
-//
-//	acceptor.newOrderChan <- order
-//	acceptor.newOrderChan <- order2
-//
-//	i := 0
-//	for info := range acceptor.kernel.matchedInfoChan {
-//		forCheck1 := types.KernelOrder{
-//			KernelOrderID: info.makerOrders[0].KernelOrderID,
-//			CreateTime:    info.makerOrders[0].CreateTime,
-//			UpdateTime:    info.makerOrders[0].UpdateTime,
-//			Amount:        100,
-//			Price:         200,
-//			Left:          0,
-//			FilledTotal:   20000,
-//			Status:        types.CLOSED,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		forCheck2 := types.KernelOrder{
-//			KernelOrderID: info.takerOrder.KernelOrderID,
-//			CreateTime:    info.takerOrder.CreateTime,
-//			UpdateTime:    info.takerOrder.UpdateTime,
-//			Amount:        -100,
-//			Price:         200,
-//			Left:          0,
-//			FilledTotal:   -20000,
-//			Status:        types.CLOSED,
-//			Type:          0,
-//			TimeInForce:   0,
-//			Id:            0,
-//		}
-//		assert.Equal(t, forCheck1, info.makerOrders[0])
-//		assert.Equal(t, forCheck2, info.takerOrder)
-//		i++
-//		if i == 1 {
-//			break
-//		}
-//	}
-//	time.Sleep(100 * time.Millisecond)
-//	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
-//	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
-//	assert.Equal(t, 0, acceptor.kernel.ask.Length)
-//	assert.Equal(t, 0, acceptor.kernel.bid.Length)
-//}
 
 // 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个同价格且同数量订单, 匹配完成后ask/bid全空
 func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
@@ -1071,7 +992,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 
 	go func() {
 		for {
-			<-acceptor.orderConfirmedChan
+			<-acceptor.orderReceivedChan
 		}
 	}()
 
@@ -1178,15 +1099,18 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 }
 
 func TestRestoreKernel(t *testing.T) {
+	baseDir := kernelSnapshotPath + "redo/"
+	dir, err := ioutil.ReadDir(baseDir)
+	if err != nil {
+		fmt.Println("Err in TestRestoreKernel", err.Error())
+	}
+	info := dir[len(dir)-1]
 	st := time.Now().UnixNano()
-	k, b := restoreKernel("./orderbook_snapshot/redo/1594783392/")
+	k, b := restoreKernel(baseDir + info.Name() + "/")
 	et := time.Now().UnixNano()
 	fmt.Println("Restore finished in ", (et-st)/(1000*1000), " ms")
-	fmt.Println(b)
-	fmt.Println(k.ask.Length)
-	fmt.Println(k.bid.Length)
-	fmt.Println(k.ask1Price)
-	fmt.Println(k.bid1Price)
+	assert.Equal(t, true, b)
+	_ = k
 }
 
 func Test_kernel_cancelOrder(t *testing.T) {
@@ -1230,13 +1154,13 @@ func Test_kernel_cancelOrder(t *testing.T) {
 
 	ids := make([]*types.KernelOrder, 0, 2)
 	for i := 0; i < 2; i++ {
-		v := <-acceptor.orderConfirmedChan
+		v := <-acceptor.orderReceivedChan
 		ids = append(ids, v)
 	}
 
 	go func() {
 		for {
-			<-acceptor.orderConfirmedChan
+			<-acceptor.orderReceivedChan
 		}
 	}()
 

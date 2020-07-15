@@ -184,7 +184,7 @@ func Test_getBytes(t *testing.T) {
 }
 
 func Test_getBinary(t *testing.T) {
-	bytes := getOrderBinary(&types.KernelOrder{
+	order := &types.KernelOrder{
 		KernelOrderID: math.MaxUint64,
 		CreateTime:    math.MinInt64,
 		UpdateTime:    math.MinInt64,
@@ -196,14 +196,10 @@ func Test_getBinary(t *testing.T) {
 		Type:          math.MaxUint8,
 		TimeInForce:   math.MaxUint8,
 		Id:            math.MaxUint64,
-	})
-	bytes2 := getOrderBinary(&types.KernelOrder{})
-	fmt.Println(len(bytes))
-	fmt.Println(cap(bytes))
-	fmt.Println(len(bytes2))
-	fmt.Println(cap(bytes2))
-
-	fmt.Println(readOrderBinary(bytes))
-	fmt.Println(readOrderBinary(bytes2))
-
+	}
+	bytes := getOrderBinary(order)
+	order2 := &types.KernelOrder{}
+	bytes2 := getOrderBinary(order2)
+	assert.Equal(t, true, *readOrderBinary(bytes) == *order)
+	assert.Equal(t, true, *readOrderBinary(bytes2) == *order2)
 }
