@@ -54,7 +54,7 @@ type orderBookItem struct {
 	Size  int64
 }
 
-func (k *kernel) depth() *orderBook {
+func (k *kernel) fullDepth() *orderBook {
 	a := make([]orderBookItem, 0, k.ask.Length)
 	for e1 := k.ask.Front(); e1 != nil; e1 = e1.Next() {
 		bucket := e1.value.(*priceBucket)
@@ -282,7 +282,7 @@ func (k *kernel) clearBucket(e *Element, takerOrder types.KernelOrder, wg *sync.
 }
 
 // run in single thread,  需确证可撮合的订单进入
-func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, isAsk bool) {
+func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrder, isAsk bool) {
 	wg := sync.WaitGroup{}
 	removeBucketKeyList := list.New()
 	// POC
@@ -300,7 +300,7 @@ func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, is
 	// IOC : Immediate Or Cancel
 	if takerOrder.TimeInForce == types.IOC {
 		var priceMatchedLeft int64
-		for skipListElement := side.Front(); skipListElement != nil; skipListElement = skipListElement.Next() {
+		for skipListElement := targetSide.Front(); skipListElement != nil; skipListElement = skipListElement.Next() {
 			bucket := skipListElement.Value().(*priceBucket)
 			bucketListHead := bucket.l.Front().Value.(*types.KernelOrder)
 			// check price
@@ -326,7 +326,7 @@ func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, is
 	// GTC takerOrder
 	if takerOrder.TimeInForce == types.GTC {
 	Loop:
-		for skipListElement := side.Front(); skipListElement != nil; skipListElement = skipListElement.Next() {
+		for skipListElement := targetSide.Front(); skipListElement != nil; skipListElement = skipListElement.Next() {
 			bucket := skipListElement.Value().(*priceBucket)
 			bucketListHead := bucket.l.Front().Value.(*types.KernelOrder)
 			// check price
@@ -404,15 +404,15 @@ func (k *kernel) matchingOrder(side *SkipList, takerOrder *types.KernelOrder, is
 
 	// remove cleared bucket
 	for e := removeBucketKeyList.Front(); e != nil; e = e.Next() {
-		side.Remove(e.Value.(float64))
+		targetSide.Remove(e.Value.(float64))
 	}
 
 	// 等待异步处理完成
 	wg.Wait()
 
 	// 必须等待异步处理完成后, 更新买一/卖一价格
-	if side.Length != 0 {
-		bucket := side.Front().value.(*priceBucket)
+	if targetSide.Length != 0 {
+		bucket := targetSide.Front().value.(*priceBucket)
 		kernelOrder := bucket.l.Front().Value.(*types.KernelOrder)
 		price := kernelOrder.Price
 		if isAsk {

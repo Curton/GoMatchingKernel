@@ -8,6 +8,7 @@ package exchangeKernel
 import (
 	"exchangeKernel/types"
 	"log"
+	"math"
 	"math/rand"
 	"os"
 	"time"
@@ -77,7 +78,32 @@ func (s *scheduler) startOrderAcceptor() {
 				}
 			} else if kernelOrder.Type == types.MARKET {
 				// 市价单
-				// todo
+				kernelOrder.TimeInForce = types.IOC
+				if kernelOrder.Amount > 0 {
+					// bid, buy
+					if s.kernel.ask1Price != math.MaxInt64 {
+						kernelOrder.Price = int64(float64(s.kernel.ask1Price) * marketOrderOffset)
+						s.kernel.matchingOrder(s.kernel.ask, &kernelOrder, false)
+					} else {
+						kernelOrder.Price = 0
+						kernelOrder.Status = types.CANCELLED
+						s.kernel.matchedInfoChan <- &matchedInfo{
+							takerOrder: kernelOrder,
+						}
+					}
+				} else {
+					// ask, sell
+					if s.kernel.bid1Price != math.MinInt64 {
+						kernelOrder.Price = int64(float64(s.kernel.ask1Price) * marketOrderOffset)
+						s.kernel.matchingOrder(s.kernel.bid, &kernelOrder, true)
+					} else {
+						kernelOrder.Price = 0
+						kernelOrder.Status = types.CANCELLED
+						s.kernel.matchedInfoChan <- &matchedInfo{
+							takerOrder: kernelOrder,
+						}
+					}
+				}
 			}
 
 		case rq := <-s.requestQuotationChan:
@@ -117,7 +143,26 @@ func (s *scheduler) startRedoOrderAcceptor() {
 			}
 		} else if recv.Type == types.MARKET {
 			// 市价单
-			// todo
+			recv.TimeInForce = types.IOC
+			if recv.Amount > 0 {
+				// bid, buy
+				if s.kernel.ask1Price != math.MaxInt64 {
+					recv.Price = int64(float64(s.kernel.ask1Price) * marketOrderOffset)
+					s.kernel.matchingOrder(s.kernel.ask, recv, false)
+				} else {
+					recv.Price = 0
+					recv.Status = types.CANCELLED
+				}
+			} else {
+				// ask, sell
+				if s.kernel.bid1Price != math.MinInt64 {
+					recv.Price = int64(float64(s.kernel.ask1Price) * marketOrderOffset)
+					s.kernel.matchingOrder(s.kernel.bid, recv, true)
+				} else {
+					recv.Price = 0
+					recv.Status = types.CANCELLED
+				}
+			}
 		}
 	}
 }

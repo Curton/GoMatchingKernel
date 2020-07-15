@@ -13,4 +13,5 @@ var (
 	kernelOrderLogCache  = true
 	saveOrderLog         = true
 	redoSnapshotInterval = time.Second
+	marketOrderOffset    = 1.1
 )

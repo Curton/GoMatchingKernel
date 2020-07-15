@@ -1170,7 +1170,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	//et := time.Now().UnixNano()
 	//fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
 	time.Sleep(3 * time.Second)
-	//log.Println(*acceptor.kernel.depth())
+	//log.Println(*acceptor.kernel.fullDepth())
 	fmt.Println(acceptor.kernel.ask1Price)
 	fmt.Println(acceptor.kernel.bid1Price)
 	fmt.Println(acceptor.redoKernel.ask1Price)
