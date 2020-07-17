@@ -26,7 +26,5 @@ func TestOrderSize(t *testing.T) {
 func TestList(t *testing.T) {
 	l := list.List{}
 	l.PushBack(1)
-
 	println(l.Len())
-
 }
