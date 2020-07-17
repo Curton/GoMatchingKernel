@@ -25,7 +25,7 @@ const (
 
 // '1' is represent as '1,000,000,000' in Price
 const (
-	One int64 = 1_000_000_000
+	ONE int64 = 1_000_000_000
 )
 
 // 72 bytes
