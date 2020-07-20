@@ -14,3 +14,11 @@ var (
 	redoSnapshotInterval = time.Second
 	marketOrderOffset    = 1.1
 )
+
+type settings struct {
+	kernelOrderLogPath   string
+	kernelSnapshotPath   string
+	saveOrderLog         bool
+	redoSnapshotInterval uint64
+	marketOrderOffset    float64
+}
