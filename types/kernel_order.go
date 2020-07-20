@@ -19,8 +19,9 @@ const (
 
 const (
 	GTC TimeInForce = iota
-	IOC
+	FOK             /* 无法全部立即成交就撤销 */
 	POC
+	IOC /* 无法立即成交(吃单)的部分就撤销 */
 )
 
 // '1' is represent as '1,000,000,000' in Price

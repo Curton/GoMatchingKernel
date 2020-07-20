@@ -80,7 +80,7 @@ func (s *scheduler) startOrderAcceptor() {
 				}
 			} else if kernelOrder.Type == types.MARKET {
 				// 市价单
-				kernelOrder.TimeInForce = types.IOC
+				kernelOrder.TimeInForce = types.FOK
 				if kernelOrder.Amount > 0 {
 					// bid, buy
 					if s.kernel.ask1Price != math.MaxInt64 {
@@ -145,7 +145,7 @@ func (s *scheduler) startRedoOrderAcceptor() {
 			}
 		} else if recv.Type == types.MARKET {
 			// 市价单
-			recv.TimeInForce = types.IOC
+			recv.TimeInForce = types.FOK
 			if recv.Amount > 0 {
 				// bid, buy
 				if s.kernel.ask1Price != math.MaxInt64 {

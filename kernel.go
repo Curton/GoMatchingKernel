@@ -203,7 +203,7 @@ func (k *kernel) insertCheckedOrder(order *types.KernelOrder) bool {
 				l:    l,
 				Left: order.Left,
 			})
-			// DCL 减少锁开销
+			// DCL 减少锁开销, this can be removed while all method call are synchronised
 			if k.ask1Price == math.MaxInt64 {
 				k.ask1PriceMux.Lock()
 				if k.ask1Price == math.MaxInt64 {
@@ -235,7 +235,7 @@ func (k *kernel) insertCheckedOrder(order *types.KernelOrder) bool {
 				l:    l,
 				Left: order.Left,
 			})
-			// DCL 减少锁开销
+			// DCL 减少锁开销, this can be removed while all method call are synchronised
 			if k.bid1Price == math.MinInt64 {
 				k.bid1PriceMux.Lock()
 				if k.bid1Price == math.MinInt64 {
@@ -297,8 +297,8 @@ func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrd
 		}
 		return
 	}
-	// IOC : Immediate Or Cancel
-	if takerOrder.TimeInForce == types.IOC {
+	// FOK : Fill Or Kill
+	if takerOrder.TimeInForce == types.FOK {
 		var priceMatchedLeft int64
 		for skipListElement := targetSide.Front(); skipListElement != nil; skipListElement = skipListElement.Next() {
 			bucket := skipListElement.Value().(*priceBucket)
@@ -311,7 +311,7 @@ func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrd
 		}
 		// not enough orders left
 		if (isAsk && takerOrder.Left < priceMatchedLeft) || (!isAsk && takerOrder.Left > priceMatchedLeft) {
-			// cancel
+			// cancel all
 			takerOrder.UpdateTime = time.Now().UnixNano()
 			takerOrder.Status = types.CANCELLED
 			k.matchedInfoChan <- &matchedInfo{
@@ -324,7 +324,7 @@ func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrd
 	}
 
 	// GTC takerOrder
-	if takerOrder.TimeInForce == types.GTC {
+	if takerOrder.TimeInForce == types.GTC || takerOrder.TimeInForce == types.IOC {
 	Loop:
 		for skipListElement := targetSide.Front(); skipListElement != nil; skipListElement = skipListElement.Next() {
 			bucket := skipListElement.Value().(*priceBucket)
@@ -396,8 +396,16 @@ func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrd
 		}
 		// Loop end
 
-		// 还有剩余的不能成交, 插入卖单队列
-		if takerOrder.Left != 0 {
+		if takerOrder.TimeInForce == types.IOC {
+			takerOrder.UpdateTime = time.Now().UnixNano()
+			takerOrder.Status = types.CANCELLED
+			k.matchedInfoChan <- &matchedInfo{
+				makerOrders:    nil,
+				matchedSizeMap: nil,
+				takerOrder:     *takerOrder,
+			}
+		} else if takerOrder.Left != 0 {
+			// 还有剩余的不能成交, 插入卖单队列
 			k.insertCheckedOrder(takerOrder)
 		}
 	}
