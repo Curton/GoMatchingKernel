@@ -2,6 +2,8 @@ package exchangeKernel
 
 import (
 	"fmt"
+	"math/rand"
+	"runtime"
 	"sync"
 	"testing"
 	"unsafe"
@@ -228,4 +230,27 @@ func BenchmarkDecGet(b *testing.B) {
 	}
 
 	b.SetBytes(int64(b.N))
+}
+
+func BenchmarkRandomSelect(b *testing.B) {
+	b.StopTimer()
+	runtime.GC()
+
+	list := NewSkipList()
+	for i := 0; i < b.N; i++ {
+		list.Set(float64(i), i)
+	}
+
+	keys := make([]int, b.N)
+
+	for i := 0; i < b.N; i++ {
+		keys[i] = rand.Intn(b.N)
+	}
+
+	b.StartTimer()
+	for _, k := range keys {
+		list.Get(float64(k))
+	}
+
+	list = nil
 }
