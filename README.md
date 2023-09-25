@@ -1,9 +1,11 @@
-# Exchange matching kernel
+# Exchange Matching Kernel
+
 A simple exchange matching kernel.
 A study project.
-## usage
 
-## data structure
+## Usage
 
-## implementation details 
+## Data structure
+
+## Implementation details 
 WAL is used for data integrity.
