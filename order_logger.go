@@ -89,10 +89,8 @@ func readListFromBytes(b []byte) *list.List {
 		log.Println(err.Error())
 	}
 	l := list.New()
-	if slice != nil {
-		for i := range slice {
-			l.PushBack(&slice[i])
-		}
+	for i := range slice {
+		l.PushBack(&slice[i])
 	}
 	return l
 }

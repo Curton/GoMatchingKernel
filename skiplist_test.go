@@ -63,9 +63,7 @@ func checkSanity(list *SkipList, t *testing.T) {
 }
 
 func TestBasicIntCRUD(t *testing.T) {
-	var list *SkipList
-
-	list = NewSkipList()
+	list := NewSkipList()
 
 	list.Set(10, 1)
 	list.Set(60, 2)

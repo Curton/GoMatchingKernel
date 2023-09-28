@@ -6,10 +6,9 @@
 package exchangeKernel
 
 import (
-	"container/list"
 	"exchangeKernel/types"
+	"container/list"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math"
 	"os"
@@ -187,7 +186,7 @@ func (k *kernel) cancelOrder(order *types.KernelOrder) {
 	log.Println("cancel err, can't find order : ", order.KernelOrderID)
 }
 
-// after price & amount checked, 附条件异步, (不同价格)的(不可成交)订单可以同时插入, 以上两个条件需同时满足
+// after price & amount checked, Conditional asynchronous, orders (at different prices) that (cannot be executed) can be inserted simultaneously, both of the above conditions must be met at the same time.
 func (k *kernel) insertCheckedOrder(order *types.KernelOrder) bool {
 	if order.Amount < 0 {
 		get := k.ask.Get(float64(order.Price))
@@ -203,7 +202,7 @@ func (k *kernel) insertCheckedOrder(order *types.KernelOrder) bool {
 				l:    l,
 				Left: order.Left,
 			})
-			// DCL 减少锁开销, this can be removed while all method call are synchronised
+			// DCL, this can be removed while all method call are synchronised
 			if k.ask1Price == math.MaxInt64 {
 				k.ask1PriceMux.Lock()
 				if k.ask1Price == math.MaxInt64 {
@@ -235,7 +234,7 @@ func (k *kernel) insertCheckedOrder(order *types.KernelOrder) bool {
 				l:    l,
 				Left: order.Left,
 			})
-			// DCL 减少锁开销, this can be removed while all method call are synchronised
+			// DCL, this can be removed while all method call are synchronised
 			if k.bid1Price == math.MinInt64 {
 				k.bid1PriceMux.Lock()
 				if k.bid1Price == math.MinInt64 {
@@ -281,7 +280,7 @@ func (k *kernel) clearBucket(e *Element, takerOrder types.KernelOrder, wg *sync.
 	k.matchedInfoChan <- matchingInfo
 }
 
-// run in single thread,  需确证可撮合的订单进入
+// run in single thread, Need to ensure that the orders can be matched
 func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrder, isAsk bool) {
 	wg := sync.WaitGroup{}
 	removeBucketKeyList := list.New()
@@ -373,7 +372,7 @@ func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrd
 						listElement = listElement.Prev()
 						bucket.l.Remove(rm)
 					} else {
-						// 吃了完了matchedOrder还有剩余
+						// After consuming the matchedOrder, there is still a remainder
 						matchedOrder.FilledTotal -= takerOrder.Left * matchedOrder.Price
 						takerOrder.FilledTotal += takerOrder.Left * matchedOrder.Price
 						matchingInfo.matchedSizeMap[matchedOrder.KernelOrderID] = -takerOrder.Left
@@ -405,7 +404,7 @@ func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrd
 				takerOrder:     *takerOrder,
 			}
 		} else if takerOrder.Left != 0 {
-			// 还有剩余的不能成交, 插入卖单队列
+			// The remaining part that can't be executed is inserted into the sell order queue
 			k.insertCheckedOrder(takerOrder)
 		}
 	}
@@ -415,10 +414,9 @@ func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrd
 		targetSide.Remove(e.Value.(float64))
 	}
 
-	// 等待异步处理完成
 	wg.Wait()
 
-	// 必须等待异步处理完成后, 更新买一/卖一价格
+	// Must wait until asynchronous processing is complete, then update the highest bid/lowest ask price
 	if targetSide.Length != 0 {
 		bucket := targetSide.Front().value.(*priceBucket)
 		kernelOrder := bucket.l.Front().Value.(*types.KernelOrder)
@@ -470,7 +468,7 @@ func restoreKernel(path string) (*kernel, bool) {
 
 	wg := &sync.WaitGroup{}
 
-	askDir, err := ioutil.ReadDir(path + "ask/")
+	askDir, err := os.ReadDir(path + "ask/")
 	if err != nil {
 		log.Println(err.Error())
 		return nil, false
@@ -481,7 +479,7 @@ func restoreKernel(path string) (*kernel, bool) {
 		i := i
 		go func() {
 			defer wg.Done()
-			bytes, err := ioutil.ReadFile(path + "ask/" + askDir[i].Name())
+			bytes, err := os.ReadFile(path + "ask/" + askDir[i].Name())
 			//fmt.Println(askDir[i].Name())
 			if err != nil {
 				log.Println(err.Error())
@@ -500,7 +498,7 @@ func restoreKernel(path string) (*kernel, bool) {
 
 	}
 
-	bidDir, err := ioutil.ReadDir(path + "bid/")
+	bidDir, err := os.ReadDir(path + "bid/")
 	if err != nil {
 		log.Println(err.Error())
 		return nil, false
@@ -511,7 +509,7 @@ func restoreKernel(path string) (*kernel, bool) {
 		i := i
 		go func() {
 			defer wg.Done()
-			bytes, err := ioutil.ReadFile(path + "bid/" + bidDir[i].Name())
+			bytes, err := os.ReadFile(path + "bid/" + bidDir[i].Name())
 			if err != nil {
 				log.Println(err.Error())
 			}

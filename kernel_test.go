@@ -8,17 +8,13 @@ package exchangeKernel
 import (
 	"exchangeKernel/types"
 	"fmt"
-	_ "fmt"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"math"
-	_ "math"
 	"math/rand"
-	_ "math/rand"
 	"sync"
-	_ "sync"
 	"testing"
 	"time"
+	"os"
 )
 
 func Test_insertPriceCheckedOrder_WithSamePrice(t *testing.T) {
@@ -1100,7 +1096,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 
 func TestRestoreKernel(t *testing.T) {
 	baseDir := kernelSnapshotPath + "redo/"
-	dir, err := ioutil.ReadDir(baseDir)
+	dir, err := os.ReadDir(baseDir)
 	if err != nil {
 		fmt.Println("Err in TestRestoreKernel", err.Error())
 	}
