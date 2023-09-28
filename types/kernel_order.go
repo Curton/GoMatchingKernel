@@ -18,10 +18,10 @@ const (
 )
 
 const (
-	GTC TimeInForce = iota
-	FOK             /* 无法全部立即成交就撤销 */
-	POC
-	IOC /* 无法立即成交(吃单)的部分就撤销 */
+	GTC TimeInForce = iota  /* "Good Till Cancelled", the order remains active until the user cancels it */
+	FOK             		/* "Fill or Kill", an order to buy or sell that must be executed immediately in its entirety; otherwise, the entire order will be cancelled (not partially filled) */
+	POC						/* "Post-Only-Order", an order that only executes if it will add liquidity to the market. */
+	IOC 					/* "Immediate or Cancel", this order fills as much as it can immediately, and cancels any remaining part of the order */
 )
 
 // '1' is represent as '1,000,000,000' in Price
