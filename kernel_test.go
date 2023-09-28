@@ -1024,7 +1024,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		}
 	}()
 
-	// 等待订单处理完毕, 开始审计
+	// Wait for the order to be processed, then start the audit
 	for b := range done {
 		if b == true {
 			// wait all matching finished

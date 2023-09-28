@@ -22,7 +22,7 @@ func init() {
 	// Display the sizes of our basic structs
 	var sl SkipList
 	var el Element
-	fmt.Printf("Structure sizes: SkipList is %v, Element is %v bytes\n", unsafe.Sizeof(sl), unsafe.Sizeof(el))
+	fmt.Printf("init(): Structure sizes: SkipList is %v, Element is %v bytes\n", unsafe.Sizeof(sl), unsafe.Sizeof(el))
 }
 
 func checkSanity(list *SkipList, t *testing.T) {

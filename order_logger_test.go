@@ -7,12 +7,13 @@ package ker
 
 import (
 	"container/list"
-	"exchangeKernel/types"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"math"
 	"os"
 	"testing"
+
+	"github.com/Curton/GoMatchingKernel/types"
 )
 
 // GOMAXPROCS=1 go test -bench=BenchmarkWrite -run=none -benchtime=1s -benchmem
@@ -162,7 +163,8 @@ func Test_bytesToKernelOrder(t *testing.T) {
 	})
 
 	order := bytesToKernelOrder(bytes)
-	fmt.Println(*order)
+	_ = order 
+	// fmt.Println(*order)
 }
 
 func Test_getBytes(t *testing.T) {
