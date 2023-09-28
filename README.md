@@ -13,6 +13,10 @@ The kernel is designed to efficiently match buy and sell orders in a financial e
 * Snapshot feature: The system can take a snapshot of the current state of the order book for recovery or analysis.
 * Simple WAL is used for data integrity.
 
+## TDDO
+- more test cases, please help to privide realworld test cases
+- code coverage
+- monitoring
 ## Core Code Structure
 The main types and functionsare:
 
@@ -116,7 +120,7 @@ The main types and functions are:
 * startRedoOrderAcceptor(): This function also runs in a goroutine and processes redo orders. It's almost identical to startOrderAcceptor() but operates on the redo kernel.
 * startDummyOrderConfirmedChan(): This function starts a goroutine that drains the orderReceivedChan. This function is used for testing and should not be used in production.
 
-## implementation Details
+## Implementation Details
 
 ### Kernel
 * `ask` and `bid`: These are `*SkipList` types representing the sell (ask) and buy (bid) order books respectively.
@@ -162,5 +166,4 @@ Features:
 
 
 ## License
-
 Released under the [MIT License](LICENSE).

@@ -612,7 +612,7 @@ func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 
 // There is only one order in the sell order (ask) list, and a buy order (bid) matches an order at the same price but with insufficient quantity. 
 // After the matching is completed, the ask is completely empty, and the remaining part of the bid creates a new pending order.
-func Test_matchingDidOrder_MatchOneButIncomplete2(t *testing.T) {
+func Test_matchingBidOrder_MatchOneButIncomplete2(t *testing.T) {
 	// ask
 	order := &types.KernelOrder{
 		KernelOrderID: 0,
@@ -1181,4 +1181,42 @@ func Test_kernel_cancelOrder(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
 	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
+}
+
+//TODO
+
+func Test_partialMatchWithMultipleAsks(t *testing.T) {
+    // initialize orders and the acceptor here
+
+    // send the bid order to the acceptor
+
+    // iterate over multiple ask orders and send them to the acceptor
+
+    // check that the bid order is partially filled and that its status is correct
+
+    // check that each ask order is either fully filled or partially filled
+
+    // check that the order book is updated correctly
+}
+
+func Test_partialMatchWithMultipleBids(t *testing.T) {
+    // initialize orders and the acceptor here
+
+    // send the ask order to the acceptor
+
+    // iterate over multiple bid orders and send them to the acceptor
+
+    // check that the ask order is partially filled and that its status is correct
+
+    // check that each bid order is either fully filled or partially filled
+
+    // check that the order book is updated correctly
+}
+
+func Test_invalidOrder(t *testing.T) {
+    // initialize an invalid order and the acceptor here
+
+    // send the invalid order to the acceptor
+
+    // check that an error is returned and that the order is not added to the order book
 }
