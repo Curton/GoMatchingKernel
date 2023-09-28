@@ -12,7 +12,7 @@ var (
 	kernelSnapshotPath   = "./orderbook_snapshot/"
 	saveOrderLog         = true
 	redoSnapshotInterval = time.Second
-	marketOrderOffset    = 1.1
+	marketPriceOffset    = 1.1
 )
 
 type settings struct {
@@ -20,5 +20,5 @@ type settings struct {
 	kernelSnapshotPath   string
 	saveOrderLog         bool
 	redoSnapshotInterval uint64
-	marketOrderOffset    float64
+	marketPriceOffset    float64
 }

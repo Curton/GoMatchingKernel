@@ -42,14 +42,14 @@ func (s *scheduler) startOrderAcceptor() {
 			kernelOrder.CreateTime = time.Now().UnixNano()
 			uint64R := uint64(s.r.Int63())
 			kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | s.serverMask // use the first 16 bits as server Id
-			
+
 			// write log if saveOrderLog is true
 			if saveOrderLog {
 				if !writeOrderLog(s.f, s.acceptorDescription, recv) {
 					log.Panicln("Error in writing order log.")
 				}
 			}
-			
+
 			// cancel order if amount is zero
 			if recv.Amount == 0 {
 				recv.Status = types.CANCELLED
@@ -64,11 +64,11 @@ func (s *scheduler) startOrderAcceptor() {
 			s.orderReceivedChan <- &tmp
 
 			if kernelOrder.Type == types.LIMIT {
-				// limit order, 限价单
+				// limit order
 				if kernelOrder.Amount > 0 {
 					// bid order
 					if kernelOrder.Price < s.kernel.ask1Price {
-						// 不能成交,直接插入
+						// annot match, insert immediatly
 						s.kernel.insertCheckedOrder(&kernelOrder)
 					} else {
 						s.kernel.matchingOrder(s.kernel.ask, &kernelOrder, false)
@@ -76,19 +76,19 @@ func (s *scheduler) startOrderAcceptor() {
 				} else {
 					// ask order
 					if kernelOrder.Price > s.kernel.bid1Price {
-						// 不能成交,直接插入
+						// cannot match, insert immediatly
 						s.kernel.insertCheckedOrder(&kernelOrder)
 					} else {
 						s.kernel.matchingOrder(s.kernel.bid, &kernelOrder, true)
 					}
 				}
 			} else if kernelOrder.Type == types.MARKET {
-				// 市价单
+				// market price order
 				kernelOrder.TimeInForce = types.FOK
 				if kernelOrder.Amount > 0 {
 					// bid, buy
 					if s.kernel.ask1Price != math.MaxInt64 {
-						kernelOrder.Price = int64(float64(s.kernel.ask1Price) * marketOrderOffset)
+						kernelOrder.Price = int64(float64(s.kernel.ask1Price) * marketPriceOffset)
 						s.kernel.matchingOrder(s.kernel.ask, &kernelOrder, false)
 					} else {
 						kernelOrder.Price = 0
@@ -100,7 +100,7 @@ func (s *scheduler) startOrderAcceptor() {
 				} else {
 					// ask, sell
 					if s.kernel.bid1Price != math.MinInt64 {
-						kernelOrder.Price = int64(float64(s.kernel.ask1Price) * marketOrderOffset)
+						kernelOrder.Price = int64(float64(s.kernel.ask1Price) * marketPriceOffset)
 						s.kernel.matchingOrder(s.kernel.bid, &kernelOrder, true)
 					} else {
 						kernelOrder.Price = 0
@@ -129,11 +129,11 @@ func (s *scheduler) startRedoOrderAcceptor() {
 		}
 
 		if recv.Type == types.LIMIT {
-			// limit order, 限价单
+			// limit order
 			if recv.Amount > 0 {
 				// bid order
 				if recv.Price < s.redoKernel.ask1Price {
-					// 不能成交,直接插入
+					// cannot match, insert immediatly
 					s.redoKernel.insertCheckedOrder(recv)
 				} else {
 					s.redoKernel.matchingOrder(s.redoKernel.ask, recv, false)
@@ -141,19 +141,19 @@ func (s *scheduler) startRedoOrderAcceptor() {
 			} else {
 				// ask order
 				if recv.Price > s.redoKernel.bid1Price {
-					// 不能成交,直接插入
+					// cannot match, insert immediatly
 					s.redoKernel.insertCheckedOrder(recv)
 				} else {
 					s.redoKernel.matchingOrder(s.redoKernel.bid, recv, true)
 				}
 			}
 		} else if recv.Type == types.MARKET {
-			// 市价单
+			// market price order
 			recv.TimeInForce = types.FOK
 			if recv.Amount > 0 {
 				// bid, buy
 				if s.kernel.ask1Price != math.MaxInt64 {
-					recv.Price = int64(float64(s.kernel.ask1Price) * marketOrderOffset)
+					recv.Price = int64(float64(s.kernel.ask1Price) * marketPriceOffset)
 					s.kernel.matchingOrder(s.kernel.ask, recv, false)
 				} else {
 					recv.Price = 0
@@ -162,7 +162,7 @@ func (s *scheduler) startRedoOrderAcceptor() {
 			} else {
 				// ask, sell
 				if s.kernel.bid1Price != math.MinInt64 {
-					recv.Price = int64(float64(s.kernel.ask1Price) * marketOrderOffset)
+					recv.Price = int64(float64(s.kernel.ask1Price) * marketPriceOffset)
 					s.kernel.matchingOrder(s.kernel.bid, recv, true)
 				} else {
 					recv.Price = 0
