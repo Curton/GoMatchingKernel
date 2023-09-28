@@ -7,7 +7,7 @@
 - The kernel is designed to efficiently match buy and sell orders in a financial exchanges.  
 
 ## Features
-* Order matching: The system uses skiplist for both buy and sell orders to efficiently match orders based on price and quantity.
+* Order matching: The kernel uses skiplist for both buy and sell orders to efficiently match orders based on price and quantity.
 * Multiple Order types: Supports different order types including Good-Till-Cancelled (GTC), Immediate-Or-Cancel (IOC), Fill-Or-Kill (FOK) and Post-Only-Order/Pending-Or-Cancelled (POC)
 * Concurrency: Handle multiple orders simultaneously.
 * Order cancellation: Orders can be cancelled as per the conditions defined.
