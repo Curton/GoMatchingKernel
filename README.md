@@ -116,29 +116,51 @@ The main types and functions are:
 * startRedoOrderAcceptor(): This function also runs in a goroutine and processes redo orders. It's almost identical to startOrderAcceptor() but operates on the redo kernel.
 * startDummyOrderConfirmedChan(): This function starts a goroutine that drains the orderReceivedChan. This function is used for testing and should not be used in production.
 
-## Data structure
+## implementation Details
 
 ### Kernel
-* ask and bid: These are *SkipList types representing the sell (ask) and buy (bid) order books respectively.
-* ask1Price and bid1Price: These int64 types represent the current top (best) prices on the respective order books.
-* matchedInfoChan and errorInfoChan: These channels are used for inter-goroutine communication, sending matched order information and potential errors respectively.
-* ask1PriceMux and bid1PriceMux: These sync.Mutex types are used to provide safe concurrent access to ask1Price and bid1Price respectively.
+* `ask` and `bid`: These are `*SkipList` types representing the sell (ask) and buy (bid) order books respectively.
+* `ask1Price` and `bid1Price`: These `int64` types represent the current top (best) prices on the respective order books.
+* `matchedInfoChan` and `errorInfoChan`: These channels are used for inter-goroutine communication, sending matched order information and potential errors respectively.
+* `ask1PriceMux` and `bid1PriceMux`: These sync.Mutex types are used to provide safe concurrent access to `ask1Price` and `bid1Price` respectively.
 
 ### SkipList
 * Two skip list is used to maintain the order book in a way that allows for efficient matching of orders.
 
 ### priceBucket
 A priceBucket is represents a price level in the order book:
-* l: A list of orders at this price level.
-* Left: The total amount of the orders left at this price level.
+* `l`: A list of orders at this price level.
+* `Left`: The total amount of the orders left at this price level.
 
 ### orderBookItem
 An orderBookItem represents an item in the order book:
-* Price: The price of the order.
-* Size: The size (quantity) of the order.
+* `Price`: The price of the order.
+* `Size`: The size (quantity) of the order.
 
 ### matchedInfo
 The matchedInfo represents information about matched orders. 
-* makerOrders: A slice of KernelOrder that were on the order book and have been matched with the taker order.
-* matchedSizeMap: A map tracking the size that has been matched for each order.
-* takerOrder: The KernelOrder that came to the order book and was matched with the maker orders.
+* `makerOrders`: A slice of `KernelOrder` that were on the order book and have been matched with the taker order.
+* `matchedSizeMap`: A map tracking the size that has been matched for each order.
+* `takerOrder`: The `KernelOrder` that came to the order book and was matched with the maker orders.
+
+## redoKernel
+The `redoKernel` is an instance of the `kernel` type. It's used to process redo orders. 
+Redo orders are a type of order that the system has processed before but needs to process again, for fast recovery or error correction. 
+Enabling the `redoKernel` will start the `RedoOrderAcceptor`, which reads and processes redo orders from the `redoOrderChan` channel.
+The main difference between the `kernel` and `redoKernel` is that the `redoKernel` only processes redo orders while the `kernel` processes new orders.  
+
+## Orders log
+Orders log is a crucial part of any trading system, serving as a crucial tool for audit, debugging and in some cases, recovery.  
+
+Features:
+
+- Order Logging: The system logs all incoming orders with details including order ID, type, price, quantity, and more.
+- Binary Encoding: The orders are encoded into binary format before being written to the log file to save space and improve performance.
+- Log Reading: The logger can read orders from a log file and convert them back into orders.
+- Redo Log Reading: The logger can read redo logs and send them to a redo kernel for processing.
+
+
+
+## License
+
+Released under the [MIT License](LICENSE).
