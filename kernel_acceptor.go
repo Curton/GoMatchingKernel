@@ -85,6 +85,8 @@ func (s *scheduler) startOrderAcceptor() {
 				}
 			} else if kernelOrder.Type == types.MARKET {
 				// market price order
+				// FOK: FillOrKill, fill either completely or none, Only `IOC` and `FOK` are supported when `kernelOrder.Type`=`MARKET`
+				// TODO: `IOC` or `FOK`?
 				kernelOrder.TimeInForce = types.FOK
 				if kernelOrder.Amount > 0 {
 					// bid, buy
@@ -120,6 +122,7 @@ func (s *scheduler) startOrderAcceptor() {
 
 }
 
+// todo: reuse startOrderAcceptor
 func (s *scheduler) startRedoOrderAcceptor() {
 	for recv := range s.redoOrderChan {
 		// cancel order
