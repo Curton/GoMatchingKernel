@@ -15,7 +15,7 @@ func init() {
 	// Initialize a big SkipList for the Get() benchmark
 	benchList = NewSkipList()
 
-	for i := 0; i <= 10000000; i++ {
+	for i := 0; i <= 20000000; i++ {
 		benchList.Set(float64(i), [1]byte{})
 	}
 
@@ -25,11 +25,12 @@ func init() {
 	fmt.Printf("init(): Structure sizes: SkipList is %v, Element is %v bytes\n", unsafe.Sizeof(sl), unsafe.Sizeof(el))
 }
 
+// checks the integrity of the SkipList
 func checkSanity(list *SkipList, t *testing.T) {
 	// each level must be correctly ordered
 	for k, v := range list.next {
-		//t.Log("Level", k)
 
+		// If the current node is nil, skip to the next iteration.
 		if v == nil {
 			continue
 		}
@@ -250,5 +251,4 @@ func BenchmarkRandomSelect(b *testing.B) {
 		list.Get(float64(k))
 	}
 
-	list = nil
 }
