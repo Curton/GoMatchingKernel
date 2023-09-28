@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+// scheduler struct represents the scheduler used in the trading system.
 type scheduler struct {
 	kernel              *kernel
 	redoKernel          *kernel
@@ -28,10 +29,11 @@ type scheduler struct {
 	f                   *[1]*os.File // kernelOrder logger file
 }
 
+// internalRequestCode represents a code for internal requests.
 type internalRequestCode uint16
 
-// should run in go routine
-// 判断 限价单 与 市价单
+// startOrderAcceptor should be run in a goroutine. It processes new orders and checks if they are limit or market orders.
+// classify limit orders and market orders
 func (s *scheduler) startOrderAcceptor() {
 	for {
 		select {
@@ -40,13 +42,15 @@ func (s *scheduler) startOrderAcceptor() {
 			kernelOrder.CreateTime = time.Now().UnixNano()
 			uint64R := uint64(s.r.Int63())
 			kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | s.serverMask // use the first 16 bits as server Id
-			// write log
+			
+			// write log if saveOrderLog is true
 			if saveOrderLog {
-				if writeOrderLog(s.f, s.acceptorDescription, recv) != true {
-					log.Panicln("Err in write order log.")
+				if !writeOrderLog(s.f, s.acceptorDescription, recv) {
+					log.Panicln("Error in writing order log.")
 				}
 			}
-			// cancel order
+			
+			// cancel order if amount is zero
 			if recv.Amount == 0 {
 				recv.Status = types.CANCELLED
 				// accept order signal
