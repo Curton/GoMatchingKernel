@@ -1,9 +1,9 @@
 # Exchange Matching Kernel
 
-A simple exchange matching kernel written in Go.
-A study project.
-The kernel contains the core code for an Order Matching System.
-The kernel is designed to efficiently match buy and sell orders in a financial exchange.
+A simple exchange matching kernel written in Go.  
+A study project.  
+The kernel contains the core code for an Order Matching System.  
+The kernel is designed to efficiently match buy and sell orders in a financial exchange.  
 
 ## Features
 * Order matching: The system uses a skip list data structure for both buy and sell orders to efficiently match orders based on price and quantity.
