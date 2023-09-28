@@ -1,4 +1,4 @@
-package exchangeKernel
+package ker
 
 import (
 	"fmt"

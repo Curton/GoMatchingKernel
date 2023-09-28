@@ -1,4 +1,4 @@
-module exchangeKernel
+module github.com/Curton/GoMatchingKernel
 
 go 1.21.1
 

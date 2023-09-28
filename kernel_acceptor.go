@@ -3,15 +3,16 @@
  * @date 2020/6/26 19:05
  */
 
-package exchangeKernel
+package ker
 
 import (
-	"exchangeKernel/types"
 	"log"
 	"math"
 	"math/rand"
 	"os"
 	"time"
+
+	"github.com/Curton/GoMatchingKernel/types"
 )
 
 // scheduler struct represents the scheduler used in the trading system.

@@ -3,19 +3,20 @@
  * @date 2020/7/2 14:31
  */
 
-package exchangeKernel
+package ker
 
 import (
 	"bytes"
 	"container/list"
 	"encoding/binary"
 	"encoding/gob"
-	"exchangeKernel/types"
 	"io"
 	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/Curton/GoMatchingKernel/types"
 )
 
 func writeOrderLog(f *[1]*os.File, acceptorDescription string, kernelOrder *types.KernelOrder) bool {

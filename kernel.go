@@ -3,10 +3,9 @@
  * @date 2020/7/6 11:24
  */
 
-package exchangeKernel
+package ker
 
 import (
-	"exchangeKernel/types"
 	"container/list"
 	"fmt"
 	"log"
@@ -15,6 +14,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/Curton/GoMatchingKernel/types"
 )
 
 type kernel struct {

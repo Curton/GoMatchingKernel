@@ -3,7 +3,7 @@
  * @date 2020/7/2 14:51
  */
 
-package exchangeKernel
+package ker
 
 import (
 	"container/list"

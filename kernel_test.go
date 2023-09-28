@@ -3,10 +3,9 @@
  * @date 2020/6/26 19:20
  */
 
-package exchangeKernel
+package ker
 
 import (
-	"exchangeKernel/types"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"math"
@@ -15,6 +14,8 @@ import (
 	"testing"
 	"time"
 	"os"
+
+	"github.com/Curton/GoMatchingKernel/types"
 )
 
 func Test_insertPriceCheckedOrder_WithSamePrice(t *testing.T) {
