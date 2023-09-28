@@ -147,13 +147,13 @@ The matchedInfo represents information about matched orders.
 * `matchedSizeMap`: A map tracking the size that has been matched for each order.
 * `takerOrder`: The `KernelOrder` that came to the order book and was matched with the maker orders.
 
-## redoKernel
+### redoKernel
 The `redoKernel` is an instance of the `kernel` type. It's used to process redo orders. 
 Redo orders are a type of order that the system has processed before but needs to process again, for fast recovery or error correction. 
 Enabling the `redoKernel` will start the `RedoOrderAcceptor`, which reads and processes redo orders from the `redoOrderChan` channel.
 The main difference between the `kernel` and `redoKernel` is that the `redoKernel` only processes redo orders while the `kernel` processes new orders.  
 
-## Orders log
+### Orders log
 Orders log is a crucial part of any trading system, serving as a crucial tool for audit, debugging and in some cases, recovery.  
 
 Features:
