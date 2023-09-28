@@ -1,5 +1,5 @@
 # Exchanges Matching Kernel
-
+![workflow](https://github.com/Curton/GoMatchingKernel/actions/workflows/main.yml/badge.svg)
 A simple exchanges matching kernel written in Go.  
 A study project.  
 The kernel contains the core code for an Order Matching System.  
