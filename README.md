@@ -40,7 +40,7 @@ kernel := newKernel()
 ```
 ### Acceptor
 Used to accept and schedule orders.
-* Order Acceptance: The system accepts new orders, assigns an order ID, logs the order if enabled, and checks if the orders are limit or market orders.
+* Order Acceptance: The function accepts new orders, assigns an order ID, logs the order if enabled, and checks if the orders are limit or market orders.
 * Order Processing: Processes the orders based on their type - limit or market, and routes them to the appropriate matching function in the kernel.
 * Concurrent Processing: handle multiple orders simultaneously.
 * Redo Log: The acceptor can also process a redo log to recover the state of the kernel in case of a system failure.
@@ -50,7 +50,9 @@ The main types and functions are:
 * scheduler: The main struct representing the acceptor. It contains channels for handling new orders, redo orders, received orders, and internal requests. It also contains an  instance of the kernel and the redo kernel.
 * startRedoOrderAcceptor(): This function also runs in a goroutine and processes redo orders. It's almost identical to startOrderAcceptor() but operates on the redo kernel.
 * startDummyOrderConfirmedChan(): This function starts a goroutine that drains the orderReceivedChan. This function is used for testing and should not be used in production.
+
 ## Data structure
+
 ### Kernel
 * ask and bid: These are *SkipList types representing the sell (ask) and buy (bid) order books respectively.
 * ask1Price and bid1Price: These int64 types represent the current top (best) prices on the respective order books.
@@ -58,12 +60,12 @@ The main types and functions are:
 * ask1PriceMux and bid1PriceMux: These sync.Mutex types are used to provide safe concurrent access to ask1Price and bid1Price respectively.
 
 ### SkipList
-* The skip list is used here to maintain the order book in a way that allows for efficient matching of orders.
+* Two skip list is used to maintain the order book in a way that allows for efficient matching of orders.
 
 ### priceBucket
 A priceBucket is represents a price level in the order book:
 * l: A list of orders at this price level.
-* Left: The total amount of the commodity left at this price level.
+* Left: The total amount of the orders left at this price level.
 
 ### orderBookItem
 An orderBookItem represents an item in the order book:
