@@ -20,7 +20,7 @@ const (
 const (
 	GTC TimeInForce = iota  /* "Good Till Cancelled", the order remains active until the user cancels it */
 	FOK             		/* "Fill or Kill", an order to buy or sell that must be executed immediately in its entirety; otherwise, the entire order will be cancelled (not partially filled) */
-	POC						/* "Post-Only-Order", an order that only executes if it will add liquidity to the market. */
+	POC						/* "Post-Only-Order","Pending Or Cancelled", an order that only executes if it will add liquidity to the market. */
 	IOC 					/* "Immediate or Cancel", this order fills as much as it can immediately, and cancels any remaining part of the order */
 )
 

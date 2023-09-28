@@ -1,37 +1,36 @@
 # Exchanges Matching Kernel
 [![Go](https://github.com/Curton/GoMatchingKernel/actions/workflows/go.yml/badge.svg)](https://github.com/Curton/GoMatchingKernel/actions/workflows/go.yml)  
 
-A simple exchanges matching kernel written in Go.  
-A study project.  
-The kernel contains the core code for an Order Matching System.  
-The kernel is designed to efficiently match buy and sell orders in a financial exchanges.  
+- A simple exchanges matching kernel written in Go.  
+- A study project.  
+- The kernel acting the core of an Order Matching System.  
+- The kernel is designed to efficiently match buy and sell orders in a financial exchanges.  
 
 ## Features
-* Order matching: The system uses a skip list data structure for both buy and sell orders to efficiently match orders based on price and quantity.
-* Order types: Supports different order types including Good-Till-Cancelled (GTC), Immediate-Or-Cancel (IOC), and Fill-Or-Kill (FOK).
-* Concurrency: Makes use of Go's built-in concurrency features to handle multiple orders simultaneously.
+* Order matching: The system uses skiplist for both buy and sell orders to efficiently match orders based on price and quantity.
+* Multiple Order types: Supports different order types including Good-Till-Cancelled (GTC), Immediate-Or-Cancel (IOC), Fill-Or-Kill (FOK) and Post-Only-Order/Pending-Or-Cancelled (POC)
+* Concurrency: Handle multiple orders simultaneously.
 * Order cancellation: Orders can be cancelled as per the conditions defined.
 * Snapshot feature: The system can take a snapshot of the current state of the order book for recovery or analysis.
-* Simple WAL is used for data integrity.
+* Simple WAL is used for data integrity
 
 ## TDDO
-- more test cases, please help to privide realworld test cases
+- more test cases, many thanks to who can help us implement the TODO test cases
 - code coverage
 - monitoring
+- kernel data visualization
+
 ## Core Code Structure
-The main types and functionsare:
+The main concepts and functionsare:
 
 * kernel: The core struct representing the order matching system.
-* matchedInfo: Struct representing information about matched orders.
+* matchedInfo: Represents information about matched orders.
 * priceBucket: Represents a price level in the order book.
-* orderBookItem: Represents an item in the order book.
-* fullDepth(): Returns a snapshot of the entire order book.
 * takeSnapshot(): Takes a snapshot of the current state of the order book.
 * cancelOrder(): Cancels a given order.
 * insertCheckedOrder(): Inserts an order into the order book after checking for validity.
 * clearBucket(): Clears a price level in the order book.
 * matchingOrder(): Matches incoming orders with the orders in the order book.
-* newKernel(): Creates a new instance of the order matching system.
 * restoreKernel(): Restores an instance of the order matching system from a snapshot.
 
 ## Usage
@@ -163,7 +162,6 @@ Features:
 - Binary Encoding: The orders are encoded into binary format before being written to the log file to save space and improve performance.
 - Log Reading: The logger can read orders from a log file and convert them back into orders.
 - Redo Log Reading: The logger can read redo logs and send them to a redo kernel for processing.
-
 
 
 ## License

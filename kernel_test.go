@@ -1185,7 +1185,6 @@ func Test_kernel_cancelOrder(t *testing.T) {
 }
 
 //TODO
-
 func Test_partialMatchWithMultipleAsks(t *testing.T) {
     // initialize orders and the acceptor here
 

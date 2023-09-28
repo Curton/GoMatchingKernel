@@ -15,7 +15,7 @@ func init() {
 	// Initialize a big SkipList for the Get() benchmark
 	benchList = NewSkipList()
 
-	for i := 0; i <= 20000000; i++ {
+	for i := 0; i <= 10000000; i++ {
 		benchList.Set(float64(i), [1]byte{})
 	}
 
