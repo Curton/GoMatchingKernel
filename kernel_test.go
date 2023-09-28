@@ -198,7 +198,8 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 	fmt.Println("Snapshot finished in ", (et-st)/(1000*1000), " ms")
 }
 
-// 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个同价格且同数量订单, 匹配完成后ask/bid全空
+// There is only one order in the buy order (bid) list, and a sell order (ask) matches an order of the same price and the same quantity.
+// After the matching is completed, the ask/bid is completely empty.
 func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 	// bid
 	order := &types.KernelOrder{
@@ -278,7 +279,8 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 }
 
-// 卖单(ask)列表只有一个订单, 买单(bid)匹配到一个同价格且同数量订单, 匹配完成后ask/bid全空
+// There is only one order in the sell order (ask) list, and a buy order (bid) matches an order of the same price and the same quantity. 
+// After the matching is completed, the ask/bid is completely empty.
 func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 	acceptor := initAcceptor(1, "test")
 	// ask
@@ -361,7 +363,8 @@ func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 }
 
-// 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个更高价格且同数量订单, 匹配完成后ask/bid全空
+// There is only one order in the buy order (bid) list, and a sell order (ask) matches an order at a higher price and the same quantity. 
+// After the matching is completed, the ask/bid is completely empty.
 func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 	acceptor := initAcceptor(1, "test")
 	order := &types.KernelOrder{
@@ -440,7 +443,8 @@ func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 }
 
-// 卖单(ask)列表只有一个订单, 买单(bid)匹配到一个更高价格且同数量订单, 匹配完成后ask/bid全空
+// There is only one order in the sell order (ask) list, and a buy order (bid) matches an order at a higher price and the same quantity. 
+// After the matching is completed, the ask/bid is completely empty.
 func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 	// ask
 	order := &types.KernelOrder{
@@ -520,7 +524,8 @@ func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 }
 
-// 买单(bid)列表只有一个订单, 卖单(ask)匹配到一个同价格且同但数量不足的订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
+// There is only one order in the buy order (bid) list, and a sell order (ask) matches an order at the same price but with insufficient quantity. 
+// After the matching is completed, the bid is completely empty, and the remaining part of the ask creates a new pending order.
 func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 	// bid
 	order := &types.KernelOrder{
@@ -605,7 +610,8 @@ func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 	assert.Equal(t, int64(-20000), kernelOrder.FilledTotal)
 }
 
-// 卖单(ask)列表只有一个订单, 买单(bid)匹配到一个同价格且同但数量不足的订单, 匹配完成后ask全空, bid剩余部分创建一个新挂单
+// There is only one order in the sell order (ask) list, and a buy order (bid) matches an order at the same price but with insufficient quantity. 
+// After the matching is completed, the ask is completely empty, and the remaining part of the bid creates a new pending order.
 func Test_matchingDidOrder_MatchOneButIncomplete2(t *testing.T) {
 	// ask
 	order := &types.KernelOrder{
@@ -690,7 +696,8 @@ func Test_matchingDidOrder_MatchOneButIncomplete2(t *testing.T) {
 	assert.Equal(t, int64(20000), kernelOrder.FilledTotal)
 }
 
-// 买单(bid)列表有多个订单, 卖单(ask)匹配完所有订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
+// There are multiple orders in the buy order (bid) list, and the sell order (ask) matches all orders. 
+// After the matching is completed, the bid is completely empty, and the remaining part of the ask creates a new pending order.
 func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 	// bid
 	order := &types.KernelOrder{
@@ -768,7 +775,8 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 	assert.Equal(t, int64(-40), left)
 }
 
-// 买单(bid)列表有多个(200_000)订单, 卖单(ask)匹配到刚好匹配完所有订单, 匹配完成后bid全空, ask剩余部分创建一个新挂单
+// There are multiple (200,000) orders in the buy order (bid) list, and the sell order (ask) matches exactly all orders. 
+// After the matching is completed, the bid is completely empty, and the remaining part of the ask creates a new pending order.
 // test clearBucket
 func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 	testSize := 200_000
@@ -890,7 +898,7 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 	assert.Equal(t, makerSum, askSize)
 }
 
-// 100_000个随机订单, 50_000(bid) & 50_000(ask)
+// 100,000 random orders, 50,000 buy orders (bid) & 50,000 sell orders (ask).
 func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	testSize := 12_500 // * 8
 	asks := make([]*types.KernelOrder, 0, testSize)

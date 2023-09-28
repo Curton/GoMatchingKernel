@@ -34,8 +34,73 @@ This codebase is intended to be used as a library in a trading system.
 To use it, you would need to import it into your project and create a new instance of the kernel. 
 You can then use the methods provided by the kernel to interact with the order book.
 ```go
-kernel := newKernel()
-// insert orders, cancel orders, etc.
+// insert orders
+// create bid order
+order := &types.KernelOrder{
+    KernelOrderID: 0,
+    CreateTime:    0,
+    UpdateTime:    0,
+    Amount:        100,
+    Price:         200,
+    Left:          100,
+    FilledTotal:   0,
+    Status:        0,
+    Type:          0,
+    TimeInForce:   0,
+    Id:            0,
+}
+// create ask order, ask order represent in negative value
+order2 := &types.KernelOrder{
+    KernelOrderID: 1,
+    CreateTime:    0,
+    UpdateTime:    0,
+    Amount:        -100,
+    Price:         201,
+    Left:          -100,
+    FilledTotal:   0,
+    Status:        0,
+    Type:          0,
+    TimeInForce:   0,
+    Id:            0,
+}
+
+// init a new order acceptor with serverId and acceptorDescription
+acceptor := initAcceptor(1, "test")
+
+// start order acceptor
+go acceptor.startOrderAcceptor()
+
+// ignore matching info nofitied by the kernel
+acceptor.kernel.startDummyMatchedInfoChan()
+
+// submit orders to acceptor
+go func() {
+    acceptor.newOrderChan <- order
+    acceptor.newOrderChan <- order2
+}()
+
+// collect the details of received orders
+ids := make([]*types.KernelOrder, 0, 2)
+for i := 0; i < 2; i++ {
+    v := <-acceptor.orderReceivedChan
+    ids = append(ids, v)
+}
+
+// cancel order
+// make sure not block the orderReceivedChan
+go func() {
+    for {
+        // ignore order received info
+        <-acceptor.orderReceivedChan
+    }
+}()
+
+// set Amount to 0 to cancel order
+for i := range ids {
+    ids[i].Amount = 0
+    acceptor.newOrderChan <- ids[i]
+}
+
 // all other use cases are in the kernel_test.go
 ```
 ### Acceptor
