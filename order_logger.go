@@ -118,7 +118,7 @@ func readOrderBinary(b []byte) *types.KernelOrder {
 // read orders from file to redo order
 func orderLogReader(s *scheduler) {
 	for s.f[0] == nil {
-		log.Println("Err in orderLogReader : FD is <nil>")
+		log.Println("Failed to read file in orderLogReader : FD is <nil>, retry after 1 second.")
 		time.Sleep(time.Second)
 	}
 	sample := getOrderBinary(&types.KernelOrder{})

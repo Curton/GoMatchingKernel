@@ -1028,7 +1028,9 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	for b := range done {
 		if b == true {
 			// wait all matching finished
-			println(8*testSize, "orders done in ", (time.Now().UnixNano()-start)/(1000*1000), " ms")
+			matching_time := (time.Now().UnixNano()-start)/(1000*1000)
+			println(8*testSize, "orders matching finished in ", matching_time, " ms, ",int64(8*testSize)/matching_time," ops. per second" )
+			// wait for the order to be processed
 			time.Sleep(time.Second)
 			break
 		}
@@ -1097,10 +1099,12 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	//fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
 	time.Sleep(3 * time.Second)
 	//log.Println(*acceptor.kernel.fullDepth())
-	fmt.Println(acceptor.kernel.ask1Price)
-	fmt.Println(acceptor.kernel.bid1Price)
-	fmt.Println(acceptor.redoKernel.ask1Price)
-	fmt.Println(acceptor.redoKernel.bid1Price)
+	// fmt.Println(acceptor.kernel.ask1Price)
+	// fmt.Println(acceptor.kernel.bid1Price)
+	// fmt.Println(acceptor.redoKernel.ask1Price)
+	// fmt.Println(acceptor.redoKernel.bid1Price)
+	assert.Equal(t, acceptor.kernel.ask1Price, acceptor.redoKernel.ask1Price)
+	assert.Equal(t, acceptor.kernel.bid1Price, acceptor.redoKernel.bid1Price)
 }
 
 func TestRestoreKernel(t *testing.T) {
