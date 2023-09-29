@@ -33,9 +33,9 @@ type scheduler struct {
 // internalRequestCode represents a code for internal requests.
 type internalRequestCode uint16
 
-// startOrderAcceptor should be run in a goroutine. It processes new orders and checks if they are limit or market orders.
+// orderAcceptor should be run in a goroutine. It processes new orders and checks if they are limit or market orders.
 // classify limit orders and market orders
-func (s *scheduler) startOrderAcceptor() {
+func (s *scheduler) orderAcceptor() {
 	for {
 		select {
 		case recv := <-s.newOrderChan:
@@ -156,18 +156,18 @@ func (s *scheduler) startRedoOrderAcceptor() {
 			recv.TimeInForce = types.FOK
 			if recv.Amount > 0 {
 				// bid, buy
-				if s.kernel.ask1Price != math.MaxInt64 {
-					recv.Price = int64(float64(s.kernel.ask1Price) * marketPriceOffset)
-					s.kernel.matchingOrder(s.kernel.ask, recv, false)
+				if s.redoKernel.ask1Price != math.MaxInt64 {
+					recv.Price = int64(float64(s.redoKernel.ask1Price) * marketPriceOffset)
+					s.redoKernel.matchingOrder(s.redoKernel.ask, recv, false)
 				} else {
 					recv.Price = 0
 					recv.Status = types.CANCELLED
 				}
 			} else {
 				// ask, sell
-				if s.kernel.bid1Price != math.MinInt64 {
-					recv.Price = int64(float64(s.kernel.ask1Price) * marketPriceOffset)
-					s.kernel.matchingOrder(s.kernel.bid, recv, true)
+				if s.redoKernel.bid1Price != math.MinInt64 {
+					recv.Price = int64(float64(s.redoKernel.ask1Price) * marketPriceOffset)
+					s.redoKernel.matchingOrder(s.redoKernel.bid, recv, true)
 				} else {
 					recv.Price = 0
 					recv.Status = types.CANCELLED
@@ -190,7 +190,7 @@ func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 	}
 }
 
-func (s *scheduler) enableRedoKernel() {
+func (s *scheduler) startRedoKernel() {
 	s.redoKernel = newKernel()
 	s.redoOrderChan = make(chan *types.KernelOrder)
 	go s.startRedoOrderAcceptor()
@@ -198,7 +198,7 @@ func (s *scheduler) enableRedoKernel() {
 	go orderLogReader(s)
 }
 
-func (s *scheduler) startDummyOrderConfirmedChan() {
+func (s *scheduler) startDummyOrderReceivedChan() {
 	go func() {
 		for {
 			<-s.orderReceivedChan

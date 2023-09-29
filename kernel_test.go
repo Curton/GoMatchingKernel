@@ -233,8 +233,8 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
@@ -314,8 +314,8 @@ func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 		Id:            0,
 	}
 
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -396,8 +396,8 @@ func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 		Id:            0,
 	}
 
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -478,8 +478,8 @@ func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -559,8 +559,8 @@ func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -645,8 +645,8 @@ func Test_matchingBidOrder_MatchOneButIncomplete2(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -760,8 +760,8 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 
 	acceptor := initAcceptor(1, "test")
 
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.kernel.startDummyMatchedInfoChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
@@ -810,8 +810,8 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 		askSize -= i3
 	}
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 
 	takerVolumeMap := make(map[uint64]int64)
 	makerVolumeMap := make(map[uint64]int64)
@@ -951,7 +951,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
+	go acceptor.orderAcceptor()
 
 	//takerOrderSizeMap := make(map[uint64]int64)
 	//makerOrderSizeMap := make(map[uint64]int64)
@@ -1002,7 +1002,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		}
 	}()
 
-	acceptor.enableRedoKernel()
+	acceptor.startRedoKernel()
 
 	done := make(chan bool)
 	start := time.Now().UnixNano()
@@ -1030,7 +1030,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		if b == true {
 			// wait all matching finished
 			matching_time := (time.Now().UnixNano() - start) / (1000 * 1000)
-			println(8*testSize, "orders matching finished in ", matching_time, " ms, ", int64(8*testSize)/matching_time, " ops. per second")
+			println(8*testSize, "orders matching finished in ", matching_time, " ms, ", (int64(8*testSize)/matching_time) * 1000, " ops. per second")
 			// wait for the order to be processed
 			time.Sleep(time.Second)
 			break
@@ -1154,7 +1154,7 @@ func Test_kernel_cancelOrder(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
+	go acceptor.orderAcceptor()
 	acceptor.kernel.startDummyMatchedInfoChan()
 
 	go func() {
