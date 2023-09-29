@@ -1030,7 +1030,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		if b == true {
 			// wait all matching finished
 			matching_time := (time.Now().UnixNano() - start) / (1000 * 1000)
-			println(8*testSize, "orders matching finished in ", matching_time, " ms, ", (int64(8*testSize)/matching_time) * 1000, " ops. per second")
+			println(8*testSize, "orders matching finished in ", matching_time, " ms, ", (int64(8*testSize)/matching_time)*1000, " ops. per second")
 			// wait for the order to be processed
 			time.Sleep(time.Second)
 			break
@@ -1099,7 +1099,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	//et := time.Now().UnixNano()
 	//fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
 	time.Sleep(3 * time.Second)
-	//log.Println(*acceptor.kernel.fullDepth())
+	// fmt.Println(*acceptor.kernel.fullDepth())
 	// fmt.Println(acceptor.kernel.ask1Price)
 	// fmt.Println(acceptor.kernel.bid1Price)
 	// fmt.Println(acceptor.redoKernel.ask1Price)
@@ -1224,4 +1224,17 @@ func Test_invalidOrder(t *testing.T) {
 	// send the invalid order to the acceptor
 
 	// check that an error is returned and that the order is not added to the order book
+}
+
+func Test_fullDepth(t *testing.T) {
+	// init a new order acceptor with serverId and acceptorDescription
+	acceptor := initAcceptor(1, "test")
+
+	// start order acceptor
+	go acceptor.orderAcceptor()
+
+	// ignore matching info nofitied by the kernel
+	acceptor.kernel.startDummyMatchedInfoChan()
+	acceptor.kernel.fullDepth()
+
 }

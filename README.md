@@ -72,7 +72,7 @@ order2 := &types.KernelOrder{
 acceptor := initAcceptor(1, "test")
 
 // start order acceptor
-go acceptor.startOrderAcceptor()
+go acceptor.orderAcceptor()
 
 // ignore matching info nofitied by the kernel
 acceptor.kernel.startDummyMatchedInfoChan()
