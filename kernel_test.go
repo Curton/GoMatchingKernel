@@ -7,13 +7,14 @@ package ker
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"math"
 	"math/rand"
+	"os"
 	"sync"
 	"testing"
 	"time"
-	"os"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/Curton/GoMatchingKernel/types"
 )
@@ -68,8 +69,8 @@ func Test_insertPriceCheckedOrder_WithSamePrice(t *testing.T) {
 	assert.Equal(t, 1, k.bid.Length)
 }
 
-//GOMAXPROCS=1 go test -bench=. -run=none -benchtime=1s -benchmem
-//Benchmark_insertPriceCheckedOrder        6766042               187 ns/op              48 B/op          1 allocs/op
+// GOMAXPROCS=1 go test -bench=. -run=none -benchtime=1s -benchmem
+// Benchmark_insertPriceCheckedOrder        6766042               187 ns/op              48 B/op          1 allocs/op
 func Benchmark_insertPriceCheckedOrder(b *testing.B) {
 	b.ReportAllocs()
 	k := newKernel()
@@ -280,7 +281,7 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 }
 
-// There is only one order in the sell order (ask) list, and a buy order (bid) matches an order of the same price and the same quantity. 
+// There is only one order in the sell order (ask) list, and a buy order (bid) matches an order of the same price and the same quantity.
 // After the matching is completed, the ask/bid is completely empty.
 func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 	acceptor := initAcceptor(1, "test")
@@ -364,7 +365,7 @@ func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 }
 
-// There is only one order in the buy order (bid) list, and a sell order (ask) matches an order at a higher price and the same quantity. 
+// There is only one order in the buy order (bid) list, and a sell order (ask) matches an order at a higher price and the same quantity.
 // After the matching is completed, the ask/bid is completely empty.
 func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 	acceptor := initAcceptor(1, "test")
@@ -444,7 +445,7 @@ func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 }
 
-// There is only one order in the sell order (ask) list, and a buy order (bid) matches an order at a higher price and the same quantity. 
+// There is only one order in the sell order (ask) list, and a buy order (bid) matches an order at a higher price and the same quantity.
 // After the matching is completed, the ask/bid is completely empty.
 func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 	// ask
@@ -525,7 +526,7 @@ func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 	assert.Equal(t, 0, acceptor.kernel.bid.Length)
 }
 
-// There is only one order in the buy order (bid) list, and a sell order (ask) matches an order at the same price but with insufficient quantity. 
+// There is only one order in the buy order (bid) list, and a sell order (ask) matches an order at the same price but with insufficient quantity.
 // After the matching is completed, the bid is completely empty, and the remaining part of the ask creates a new pending order.
 func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 	// bid
@@ -611,7 +612,7 @@ func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 	assert.Equal(t, int64(-20000), kernelOrder.FilledTotal)
 }
 
-// There is only one order in the sell order (ask) list, and a buy order (bid) matches an order at the same price but with insufficient quantity. 
+// There is only one order in the sell order (ask) list, and a buy order (bid) matches an order at the same price but with insufficient quantity.
 // After the matching is completed, the ask is completely empty, and the remaining part of the bid creates a new pending order.
 func Test_matchingBidOrder_MatchOneButIncomplete2(t *testing.T) {
 	// ask
@@ -697,7 +698,7 @@ func Test_matchingBidOrder_MatchOneButIncomplete2(t *testing.T) {
 	assert.Equal(t, int64(20000), kernelOrder.FilledTotal)
 }
 
-// There are multiple orders in the buy order (bid) list, and the sell order (ask) matches all orders. 
+// There are multiple orders in the buy order (bid) list, and the sell order (ask) matches all orders.
 // After the matching is completed, the bid is completely empty, and the remaining part of the ask creates a new pending order.
 func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 	// bid
@@ -776,7 +777,7 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 	assert.Equal(t, int64(-40), left)
 }
 
-// There are multiple (200,000) orders in the buy order (bid) list, and the sell order (ask) matches exactly all orders. 
+// There are multiple (200,000) orders in the buy order (bid) list, and the sell order (ask) matches exactly all orders.
 // After the matching is completed, the bid is completely empty, and the remaining part of the ask creates a new pending order.
 // test clearBucket
 func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
@@ -860,7 +861,7 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 		acceptor.newOrderChan <- asks[i]
 	}
 
-	// bid, 一个大单吃完
+	// bid, consuming all pending orders
 	order2 := &types.KernelOrder{
 		KernelOrderID: 0,
 		CreateTime:    0,
@@ -1028,8 +1029,8 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	for b := range done {
 		if b == true {
 			// wait all matching finished
-			matching_time := (time.Now().UnixNano()-start)/(1000*1000)
-			println(8*testSize, "orders matching finished in ", matching_time, " ms, ",int64(8*testSize)/matching_time," ops. per second" )
+			matching_time := (time.Now().UnixNano() - start) / (1000 * 1000)
+			println(8*testSize, "orders matching finished in ", matching_time, " ms, ", int64(8*testSize)/matching_time, " ops. per second")
 			// wait for the order to be processed
 			time.Sleep(time.Second)
 			break
@@ -1188,39 +1189,39 @@ func Test_kernel_cancelOrder(t *testing.T) {
 	assert.Equal(t, int64(math.MinInt64), acceptor.kernel.bid1Price)
 }
 
-//TODO
+// TODO
 func Test_partialMatchWithMultipleAsks(t *testing.T) {
-    // initialize orders and the acceptor here
+	// initialize orders and the acceptor here
 
-    // send the bid order to the acceptor
+	// send the bid order to the acceptor
 
-    // iterate over multiple ask orders and send them to the acceptor
+	// iterate over multiple ask orders and send them to the acceptor
 
-    // check that the bid order is partially filled and that its status is correct
+	// check that the bid order is partially filled and that its status is correct
 
-    // check that each ask order is either fully filled or partially filled
+	// check that each ask order is either fully filled or partially filled
 
-    // check that the order book is updated correctly
+	// check that the order book is updated correctly
 }
 
 func Test_partialMatchWithMultipleBids(t *testing.T) {
-    // initialize orders and the acceptor here
+	// initialize orders and the acceptor here
 
-    // send the ask order to the acceptor
+	// send the ask order to the acceptor
 
-    // iterate over multiple bid orders and send them to the acceptor
+	// iterate over multiple bid orders and send them to the acceptor
 
-    // check that the ask order is partially filled and that its status is correct
+	// check that the ask order is partially filled and that its status is correct
 
-    // check that each bid order is either fully filled or partially filled
+	// check that each bid order is either fully filled or partially filled
 
-    // check that the order book is updated correctly
+	// check that the order book is updated correctly
 }
 
 func Test_invalidOrder(t *testing.T) {
-    // initialize an invalid order and the acceptor here
+	// initialize an invalid order and the acceptor here
 
-    // send the invalid order to the acceptor
+	// send the invalid order to the acceptor
 
-    // check that an error is returned and that the order is not added to the order book
+	// check that an error is returned and that the order is not added to the order book
 }
