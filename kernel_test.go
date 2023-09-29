@@ -233,8 +233,8 @@ func Test_matchingAskOrder_MatchOneAndComplete(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
@@ -314,8 +314,8 @@ func Test_matchingBidOrder_MatchOneAndComplete(t *testing.T) {
 		Id:            0,
 	}
 
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -396,8 +396,8 @@ func Test_matchingAskOrder_MatchOneAndComplete2(t *testing.T) {
 		Id:            0,
 	}
 
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -478,8 +478,8 @@ func Test_matchingBidOrder_MatchOneAndComplete2(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -559,8 +559,8 @@ func Test_matchingAskOrder_MatchOneButIncomplete(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -645,8 +645,8 @@ func Test_matchingBidOrder_MatchOneButIncomplete2(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
 
@@ -760,8 +760,8 @@ func Test_matchingAskOrder_MatchMultipleComplete(t *testing.T) {
 
 	acceptor := initAcceptor(1, "test")
 
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 	acceptor.kernel.startDummyMatchedInfoChan()
 	acceptor.newOrderChan <- order
 	acceptor.newOrderChan <- order2
@@ -810,8 +810,8 @@ func Test_matchingAskOrder_MatchMultipleComplete2(t *testing.T) {
 		askSize -= i3
 	}
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
+	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 
 	takerVolumeMap := make(map[uint64]int64)
 	makerVolumeMap := make(map[uint64]int64)
@@ -951,8 +951,13 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
+<<<<<<< HEAD
 	go acceptor.startOrderAcceptor()
 	acceptor.startDummyOrderConfirmedChan()
+=======
+	go acceptor.orderAcceptor()
+
+>>>>>>> origin/master
 	//takerOrderSizeMap := make(map[uint64]int64)
 	//makerOrderSizeMap := make(map[uint64]int64)
 	orderVolumeMap := make(map[uint64]int64)
@@ -1026,7 +1031,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 		if b == true {
 			// wait all matching finished
 			matching_time := (time.Now().UnixNano() - start) / (1000 * 1000)
-			println(8*testSize, "orders matching finished in ", matching_time, " ms, ", int64(8*testSize)/matching_time, " ops. per second")
+			println(8*testSize, "orders matching finished in ", matching_time, " ms, ", (int64(8*testSize)/matching_time)*1000, " ops. per second")
 			// wait for the order to be processed
 			time.Sleep(time.Second)
 			break
@@ -1095,6 +1100,7 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	//et := time.Now().UnixNano()
 	//fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
 	time.Sleep(3 * time.Second)
+<<<<<<< HEAD
 	//log.Println(*acceptor.kernel.fullDepth())
 	fmt.Println(acceptor.kernel.ask1Price)
 	fmt.Println(acceptor.kernel.bid1Price)
@@ -1102,6 +1108,15 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	fmt.Println(acceptor.redoKernel.bid1Price)
 	// assert.Equal(t, acceptor.kernel.ask1Price, acceptor.redoKernel.ask1Price)
 	// assert.Equal(t, acceptor.kernel.bid1Price, acceptor.redoKernel.bid1Price)
+=======
+	// fmt.Println(*acceptor.kernel.fullDepth())
+	// fmt.Println(acceptor.kernel.ask1Price)
+	// fmt.Println(acceptor.kernel.bid1Price)
+	// fmt.Println(acceptor.redoKernel.ask1Price)
+	// fmt.Println(acceptor.redoKernel.bid1Price)
+	assert.Equal(t, acceptor.kernel.ask1Price, acceptor.redoKernel.ask1Price)
+	assert.Equal(t, acceptor.kernel.bid1Price, acceptor.redoKernel.bid1Price)
+>>>>>>> origin/master
 }
 
 func TestRestoreKernel(t *testing.T) {
@@ -1150,7 +1165,7 @@ func Test_kernel_cancelOrder(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-	go acceptor.startOrderAcceptor()
+	go acceptor.orderAcceptor()
 	acceptor.kernel.startDummyMatchedInfoChan()
 
 	go func() {
@@ -1220,4 +1235,17 @@ func Test_invalidOrder(t *testing.T) {
 	// send the invalid order to the acceptor
 
 	// check that an error is returned and that the order is not added to the order book
+}
+
+func Test_fullDepth(t *testing.T) {
+	// init a new order acceptor with serverId and acceptorDescription
+	acceptor := initAcceptor(1, "test")
+
+	// start order acceptor
+	go acceptor.orderAcceptor()
+
+	// ignore matching info nofitied by the kernel
+	acceptor.kernel.startDummyMatchedInfoChan()
+	acceptor.kernel.fullDepth()
+
 }

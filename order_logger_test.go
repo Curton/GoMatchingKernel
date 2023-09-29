@@ -7,7 +7,7 @@ package ker
 
 import (
 	"container/list"
-	"fmt"
+	_ "fmt"
 	"github.com/stretchr/testify/assert"
 	"math"
 	"os"
@@ -181,8 +181,10 @@ func Test_getBytes(t *testing.T) {
 		TimeInForce:   math.MaxUint8,
 		Id:            math.MaxUint64,
 	})
-	fmt.Println(len(bytes))
-	fmt.Println(cap(bytes))
+	assert.Equal(t, len(bytes),256)
+	assert.Equal(t, cap(bytes),352)
+	// fmt.Println(len(bytes))
+	// fmt.Println(cap(bytes))
 }
 
 func Test_getBinary(t *testing.T) {

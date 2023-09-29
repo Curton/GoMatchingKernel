@@ -47,9 +47,9 @@ const (
 // internalRequestCode represents a code for internal requests.
 type internalRequestCode uint16
 
-// startOrderAcceptor should be run in a goroutine. It processes new orders and checks if they are limit or market orders.
+// orderAcceptor should be run in a goroutine. It processes new orders and checks if they are limit or market orders.
 // classify limit orders and market orders
-func (s *scheduler) startOrderAcceptor(kernel_flag ...int) {
+func (s *scheduler) orderAcceptor(kernel_flag ...int) {
 
 	numArgs := len(kernel_flag)
 	if numArgs > 1 {
@@ -240,12 +240,12 @@ func (s *scheduler) startRedoKernel() {
 	s.redoKernel = newKernel()
 	s.redoOrderChan = make(chan *types.KernelOrder)
 	// s.redoKernelStatus = WAITTING_START
-	go s.startOrderAcceptor(REDO_KERNEL)
+	go s.orderAcceptor(REDO_KERNEL)
 	// s.redoKernel.startDummyMatchedInfoChan()
 	go orderLogReader(s)
 }
 
-func (s *scheduler) startDummyOrderConfirmedChan() {
+func (s *scheduler) startDummyOrderReceivedChan() {
 	go func() {
 		for {
 			<-s.orderReceivedChan
