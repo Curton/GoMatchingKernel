@@ -188,7 +188,7 @@ func (k *kernel) cancelOrder(order *types.KernelOrder) {
 }
 
 // after price & amount checked, Conditional asynchronous, orders (at different prices) that (cannot be executed) can be inserted simultaneously, both of the above conditions must be met at the same time.
-func (k *kernel) insertCheckedOrder(order *types.KernelOrder) bool {
+func (k *kernel) insertUnmatchedOrder(order *types.KernelOrder) bool {
 	if order.Amount < 0 {
 		get := k.ask.Get(float64(order.Price))
 		if get != nil {
@@ -406,7 +406,7 @@ func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrd
 			}
 		} else if takerOrder.Left != 0 {
 			// The remaining part that can't be executed is inserted into the sell order queue
-			k.insertCheckedOrder(takerOrder)
+			k.insertUnmatchedOrder(takerOrder)
 		}
 	}
 

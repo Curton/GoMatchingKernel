@@ -49,12 +49,12 @@ func Test_insertPriceCheckedOrder_WithSamePrice(t *testing.T) {
 		TimeInForce:   0,
 		Id:            0,
 	}
-	k.insertCheckedOrder(&order)
-	k.insertCheckedOrder(&order)
-	k.insertCheckedOrder(&order)
-	k.insertCheckedOrder(&order2)
-	k.insertCheckedOrder(&order2)
-	k.insertCheckedOrder(&order2)
+	k.insertUnmatchedOrder(&order)
+	k.insertUnmatchedOrder(&order)
+	k.insertUnmatchedOrder(&order)
+	k.insertUnmatchedOrder(&order2)
+	k.insertUnmatchedOrder(&order2)
+	k.insertUnmatchedOrder(&order2)
 
 	value := k.ask.Front().Value()
 	bucket := value.(*priceBucket)
@@ -123,8 +123,8 @@ func Benchmark_insertPriceCheckedOrder(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := range asks {
-		k.insertCheckedOrder(asks[i])
-		k.insertCheckedOrder(bids[i])
+		k.insertUnmatchedOrder(asks[i])
+		k.insertUnmatchedOrder(bids[i])
 	}
 }
 
@@ -177,8 +177,8 @@ func Test_insertPriceCheckedOrder_WithRandomPrice(t *testing.T) {
 	}
 
 	for i := range asks {
-		k.insertCheckedOrder(asks[i])
-		k.insertCheckedOrder(bids[i])
+		k.insertUnmatchedOrder(asks[i])
+		k.insertUnmatchedOrder(bids[i])
 	}
 
 	var checkAskSize int64 = 0
@@ -951,13 +951,9 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	}
 
 	acceptor := initAcceptor(1, "test")
-<<<<<<< HEAD
-	go acceptor.startOrderAcceptor()
-	acceptor.startDummyOrderConfirmedChan()
-=======
 	go acceptor.orderAcceptor()
+	acceptor.startDummyOrderReceivedChan()
 
->>>>>>> origin/master
 	//takerOrderSizeMap := make(map[uint64]int64)
 	//makerOrderSizeMap := make(map[uint64]int64)
 	orderVolumeMap := make(map[uint64]int64)
@@ -1000,8 +996,6 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 			assert.Equal(t, int64(0), checkSum)
 		}
 	}()
-
-	
 
 	acceptor.startRedoKernel()
 
@@ -1100,15 +1094,6 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	//et := time.Now().UnixNano()
 	//fmt.Println("snapshot finished in ", (et-st)/(1000*1000), " ms")
 	time.Sleep(3 * time.Second)
-<<<<<<< HEAD
-	//log.Println(*acceptor.kernel.fullDepth())
-	fmt.Println(acceptor.kernel.ask1Price)
-	fmt.Println(acceptor.kernel.bid1Price)
-	fmt.Println(acceptor.redoKernel.ask1Price)
-	fmt.Println(acceptor.redoKernel.bid1Price)
-	// assert.Equal(t, acceptor.kernel.ask1Price, acceptor.redoKernel.ask1Price)
-	// assert.Equal(t, acceptor.kernel.bid1Price, acceptor.redoKernel.bid1Price)
-=======
 	// fmt.Println(*acceptor.kernel.fullDepth())
 	// fmt.Println(acceptor.kernel.ask1Price)
 	// fmt.Println(acceptor.kernel.bid1Price)
@@ -1116,7 +1101,6 @@ func Test_matchingOrders_withRandomPriceAndSize(t *testing.T) {
 	// fmt.Println(acceptor.redoKernel.bid1Price)
 	assert.Equal(t, acceptor.kernel.ask1Price, acceptor.redoKernel.ask1Price)
 	assert.Equal(t, acceptor.kernel.bid1Price, acceptor.redoKernel.bid1Price)
->>>>>>> origin/master
 }
 
 func TestRestoreKernel(t *testing.T) {

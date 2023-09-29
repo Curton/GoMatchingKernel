@@ -15,15 +15,6 @@ var (
 	marketPriceOffset    = 1.1
 )
 
-<<<<<<< HEAD
-type settings struct {
-	kernelOrderLogPath   string
-	kernelSnapshotPath   string
-	saveOrderLog         bool
-	redoSnapshotInterval uint64
-	marketPriceOffset    float64
-}
-=======
 // type settings struct {
 // 	kernelOrderLogPath   string
 // 	kernelSnapshotPath   string
@@ -31,4 +22,3 @@ type settings struct {
 // 	redoSnapshotInterval uint64
 // 	marketPriceOffset    float64
 // }
->>>>>>> origin/master
