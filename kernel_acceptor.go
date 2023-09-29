@@ -7,7 +7,7 @@ package ker
 
 import (
 	"log"
-	"math"
+	_ "math"
 	"math/rand"
 	"os"
 	"time"
