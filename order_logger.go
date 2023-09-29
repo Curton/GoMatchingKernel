@@ -130,12 +130,12 @@ func orderLogReader(s *scheduler) {
 		_, err := s.f[0].ReadAt(tmp, off)
 		if err != nil {
 			if err == io.EOF {
-				// stop kernel
+				// stop kernel, TODO: should have better way to ensure kernel stopped
 				time.Sleep(time.Second)
 				st := time.Now().UnixNano()
 				s.redoKernel.takeSnapshot("redo", lastKernelOrder)
 				et := time.Now().UnixNano()
-				log.Println("redo snapshot finished in ", (et-st)/(1000*1000), " ms")
+				log.Println("orderLogReader() :redo snapshot finished in ", (et-st)/(1000*1000), " ms")
 				time.Sleep(redoSnapshotInterval)
 				continue
 			}
