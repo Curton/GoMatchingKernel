@@ -7,6 +7,7 @@ package ker
 
 import (
 	"container/list"
+	"context"
 	"fmt"
 	"log"
 	"math"
@@ -25,8 +26,11 @@ type kernel struct {
 	bid1Price       int64
 	matchedInfoChan chan *matchedInfo
 	errorInfoChan   chan *KernelErr
+	pauseChan       chan bool
 	ask1PriceMux    sync.Mutex
 	bid1PriceMux    sync.Mutex
+	ctx             context.Context
+	cancel          context.CancelFunc
 }
 
 type matchedInfo struct {
@@ -437,6 +441,7 @@ func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrd
 }
 
 func newKernel() *kernel {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &kernel{
 		ask:             NewSkipList(),
 		bid:             NewSkipList(),
@@ -444,22 +449,16 @@ func newKernel() *kernel {
 		bid1Price:       math.MinInt64,
 		matchedInfoChan: make(chan *matchedInfo),
 		errorInfoChan:   make(chan *KernelErr),
+		pauseChan:       make(chan bool),
 		ask1PriceMux:    sync.Mutex{},
 		bid1PriceMux:    sync.Mutex{},
+		ctx:             ctx,
+		cancel:          cancel,
 	}
 }
 
 func restoreKernel(path string) (*kernel, bool) {
-	k := &kernel{
-		ask:             NewSkipList(),
-		bid:             NewSkipList(),
-		ask1Price:       math.MaxInt64,
-		bid1Price:       math.MinInt64,
-		matchedInfoChan: make(chan *matchedInfo),
-		errorInfoChan:   make(chan *KernelErr),
-		ask1PriceMux:    sync.Mutex{},
-		bid1PriceMux:    sync.Mutex{},
-	}
+	ker := newKernel()
 
 	_, err := os.Stat(path + "finished.log")
 	if os.IsNotExist(err) {
@@ -491,7 +490,7 @@ func restoreKernel(path string) (*kernel, bool) {
 			for j := l.Front(); j != nil; j = j.Next() {
 				left += j.Value.(*types.KernelOrder).Left
 			}
-			k.ask.Set(float64(price), &priceBucket{
+			ker.ask.Set(float64(price), &priceBucket{
 				l:    l,
 				Left: 0,
 			})
@@ -520,7 +519,7 @@ func restoreKernel(path string) (*kernel, bool) {
 			for j := l.Front(); j != nil; j = j.Next() {
 				left += j.Value.(*types.KernelOrder).Left
 			}
-			k.bid.Set(float64(-price), &priceBucket{
+			ker.bid.Set(float64(-price), &priceBucket{
 				l:    l,
 				Left: 0,
 			})
@@ -529,15 +528,15 @@ func restoreKernel(path string) (*kernel, bool) {
 
 	wg.Wait()
 
-	if k.ask.Length != 0 {
-		k.ask1Price = k.ask.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
+	if ker.ask.Length != 0 {
+		ker.ask1Price = ker.ask.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
 	}
 
-	if k.bid.Length != 0 {
-		k.bid1Price = k.bid.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
+	if ker.bid.Length != 0 {
+		ker.bid1Price = ker.bid.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
 	}
 
-	return k, true
+	return ker, true
 }
 
 func (k *kernel) startDummyMatchedInfoChan() {
@@ -546,4 +545,16 @@ func (k *kernel) startDummyMatchedInfoChan() {
 			<-k.matchedInfoChan
 		}
 	}()
+}
+
+func (k *kernel) Pause() {
+	k.pauseChan <- true
+}
+
+func (k *kernel) Resume() {
+	k.pauseChan <- false
+}
+
+func (k *kernel) Stop() {
+	k.cancel()
 }

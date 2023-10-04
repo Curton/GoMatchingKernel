@@ -163,7 +163,7 @@ func Test_bytesToKernelOrder(t *testing.T) {
 	})
 
 	order := bytesToKernelOrder(bytes)
-	_ = order 
+	_ = order
 	// fmt.Println(*order)
 }
 
@@ -181,8 +181,8 @@ func Test_getBytes(t *testing.T) {
 		TimeInForce:   math.MaxUint8,
 		Id:            math.MaxUint64,
 	})
-	assert.Equal(t, len(bytes),256)
-	assert.Equal(t, cap(bytes),352)
+	assert.Equal(t, len(bytes), 256)
+	assert.Equal(t, cap(bytes), 352)
 	// fmt.Println(len(bytes))
 	// fmt.Println(cap(bytes))
 }

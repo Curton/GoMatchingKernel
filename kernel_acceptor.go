@@ -19,10 +19,10 @@ import (
 type scheduler struct {
 	kernel              *kernel
 	redoKernel          *kernel
-	newOrderChan        chan *types.KernelOrder		// new orders are sending to the channel
-	redoOrderChan       chan *types.KernelOrder		// redo orders are sending to the channel
-	orderReceivedChan   chan *types.KernelOrder		// get order received confirmation
-	internalRequestChan chan internalRequestCode	// reserve
+	newOrderChan        chan *types.KernelOrder  // new orders are sending to the channel
+	redoOrderChan       chan *types.KernelOrder  // redo orders are sending to the channel
+	orderReceivedChan   chan *types.KernelOrder  // get order received confirmation
+	internalRequestChan chan internalRequestCode // reserve
 	serverId            uint64
 	serverMask          uint64
 	acceptorDescription string
@@ -85,89 +85,102 @@ func (s *scheduler) orderAcceptor(kernel_flag ...int) {
 	}
 
 	for {
-		select {
-		case recv := <-orderChan:
-			kernelOrder := *recv
-			kernelOrder.CreateTime = time.Now().UnixNano()
-			uint64R := uint64(s.r.Int63())
-			kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | s.serverMask // use the first 16 bits as server Id
+		paused := false
+		if paused {
+			<-kernel.pauseChan
+			paused = false
+		} else {
+			select {
+			// kernel stop
+			case <-s.kernel.ctx.Done():
+				return
+			// kernel pause
+			case <-kernel.pauseChan:
+				paused = true
+			case order := <-orderChan:
+				kernelOrder := *order
+				kernelOrder.CreateTime = time.Now().UnixNano()
+				uint64R := uint64(s.r.Int63())
+				kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | s.serverMask // use the first 16 bits as server Id
 
-			// write log if saveOrderLog is true and kernel_flag not set
-			if saveOrderLog && numArgs == 0 {
-				if !writeOrderLog(s.f, s.acceptorDescription, recv) {
-					log.Panicln("Error in writing order log.")
+				// write log if saveOrderLog is true and kernel_flag not set
+				if saveOrderLog && numArgs == 0 {
+					if !writeOrderLog(s.f, s.acceptorDescription, order) {
+						log.Panicln("Error in writing order log.")
+					}
 				}
-			}
 
-			// cancel order if amount is zero
-			if recv.Amount == 0 {
-				recv.Status = types.CANCELLED
+				// cancel order if amount is zero
+				if order.Amount == 0 {
+					order.Status = types.CANCELLED
+					// accept order signal
+					orderReceivedChan <- order
+					kernel.cancelOrder(order)
+					continue
+				}
+
 				// accept order signal
-				orderReceivedChan <- recv
-				kernel.cancelOrder(recv)
-				continue
-			}
+				orderReceivedChan <- &kernelOrder
 
-			// accept order signal
-			orderReceivedChan <- &kernelOrder
-
-			if kernelOrder.Type == types.LIMIT {
-				// limit order
-				if kernelOrder.Amount > 0 {
-					// bid order
-					if kernelOrder.Price < kernel.ask1Price {
-						// cannot match, insert immediatly
-						kernel.insertUnmatchedOrder(&kernelOrder)
+				if kernelOrder.Type == types.LIMIT {
+					// limit order
+					if kernelOrder.Amount > 0 {
+						// bid order
+						if kernelOrder.Price < kernel.ask1Price {
+							// cannot match, insert immediatly
+							kernel.insertUnmatchedOrder(&kernelOrder)
+						} else {
+							kernel.matchingOrder(kernel.ask, &kernelOrder, false)
+						}
 					} else {
-						kernel.matchingOrder(kernel.ask, &kernelOrder, false)
+						// ask order
+						if kernelOrder.Price > kernel.bid1Price {
+							// cannot match, insert immediatly
+							kernel.insertUnmatchedOrder(&kernelOrder)
+						} else {
+							kernel.matchingOrder(kernel.bid, &kernelOrder, true)
+						}
 					}
 				} else {
-					// ask order
-					if kernelOrder.Price > kernel.bid1Price {
-						// cannot match, insert immediatly
-						kernel.insertUnmatchedOrder(&kernelOrder)
-					} else {
-						kernel.matchingOrder(kernel.bid, &kernelOrder, true)
-					}
+					panic("Unsuported OrderType")
 				}
-			} else {
-				panic("Unsuported OrderType")
-			}
-			// else if kernelOrder.Type == types.MARKET {
-			// 	// market price order
-			// 	// FOK: FillOrKill, fill either completely or none, Only `IOC` and `FOK` are supported when `kernelOrder.Type`=`MARKET`
-			// 	// TODO: `IOC` or `FOK`?
-			// 	kernelOrder.TimeInForce = types.FOK
-			// 	if kernelOrder.Amount > 0 {
-			// 		// bid, buy
-			// 		if kernel.ask1Price != math.MaxInt64 {
-			// 			kernelOrder.Price = int64(float64(kernel.ask1Price) * marketPriceOffset)
-			// 			kernel.matchingOrder(kernel.ask, &kernelOrder, false)
-			// 		} else {
-			// 			kernelOrder.Price = 0
-			// 			kernelOrder.Status = types.CANCELLED
-			// 			kernel.matchedInfoChan <- &matchedInfo{
-			// 				takerOrder: kernelOrder,
-			// 			}
-			// 		}
-			// 	} else {
-			// 		// ask, sell
-			// 		if kernel.bid1Price != math.MinInt64 {
-			// 			kernelOrder.Price = int64(float64(kernel.ask1Price) * marketPriceOffset)
-			// 			kernel.matchingOrder(kernel.bid, &kernelOrder, true)
-			// 		} else {
-			// 			kernelOrder.Price = 0
-			// 			kernelOrder.Status = types.CANCELLED
-			// 			kernel.matchedInfoChan <- &matchedInfo{
-			// 				takerOrder: kernelOrder,
-			// 			}
-			// 		}
-			// 	}
-			// }
+				// else if kernelOrder.Type == types.MARKET {
+				// 	// market price order
+				// 	// FOK: FillOrKill, fill either completely or none, Only `IOC` and `FOK` are supported when `kernelOrder.Type`=`MARKET`
+				// 	// TODO: `IOC` or `FOK`?
+				// 	kernelOrder.TimeInForce = types.FOK
+				// 	if kernelOrder.Amount > 0 {
+				// 		// bid, buy
+				// 		if kernel.ask1Price != math.MaxInt64 {
+				// 			kernelOrder.Price = int64(float64(kernel.ask1Price) * marketPriceOffset)
+				// 			kernel.matchingOrder(kernel.ask, &kernelOrder, false)
+				// 		} else {
+				// 			kernelOrder.Price = 0
+				// 			kernelOrder.Status = types.CANCELLED
+				// 			kernel.matchedInfoChan <- &matchedInfo{
+				// 				takerOrder: kernelOrder,
+				// 			}
+				// 		}
+				// 	} else {
+				// 		// ask, sell
+				// 		if kernel.bid1Price != math.MinInt64 {
+				// 			kernelOrder.Price = int64(float64(kernel.ask1Price) * marketPriceOffset)
+				// 			kernel.matchingOrder(kernel.bid, &kernelOrder, true)
+				// 		} else {
+				// 			kernelOrder.Price = 0
+				// 			kernelOrder.Status = types.CANCELLED
+				// 			kernel.matchedInfoChan <- &matchedInfo{
+				// 				takerOrder: kernelOrder,
+				// 			}
+				// 		}
+				// 	}
+				// }
 
-		case rq := <-s.internalRequestChan:
-			_ = rq
+			case rq := <-s.internalRequestChan:
+				_ = rq
+			}
 		}
+
 	}
 
 }

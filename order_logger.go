@@ -118,8 +118,8 @@ func readOrderBinary(b []byte) *types.KernelOrder {
 // read orders from file to redo order
 func orderLogReader(s *scheduler) {
 	for s.f[0] == nil {
-		log.Println("Failed to read file in orderLogReader : FD is <nil>, retry after 1 second.")
-		time.Sleep(time.Second)
+		log.Println("Failed to read file in orderLogReader : FD is <nil>, retry after ", redoSnapshotInterval, " second.")
+		time.Sleep(redoSnapshotInterval)
 	}
 	sample := getOrderBinary(&types.KernelOrder{})
 	size := len(sample)
@@ -130,11 +130,16 @@ func orderLogReader(s *scheduler) {
 		_, err := s.f[0].ReadAt(tmp, off)
 		if err != nil {
 			if err == io.EOF {
-				// stop kernel, TODO: should have better way to ensure kernel stopped
-				time.Sleep(time.Second)
+				// time.Sleep(time.Second)
+
+				// pause redokernel
+				s.redoKernel.Pause()
+				// ensure matching work done
+				time.Sleep(time.Microsecond)
 				st := time.Now().UnixNano()
 				s.redoKernel.takeSnapshot("redo", lastKernelOrder)
 				et := time.Now().UnixNano()
+				s.redoKernel.Resume()
 				log.Println("orderLogReader() :redo snapshot finished in ", (et-st)/(1000*1000), " ms")
 				time.Sleep(redoSnapshotInterval)
 				continue
