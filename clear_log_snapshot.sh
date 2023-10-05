@@ -1,3 +1,3 @@
 #!/bin/bash
-rm -r ./kernelorder_log
-rm -r ./orderbook_snapshot
+rm -rf ./kernelorder_log
+rm -rf ./orderbook_snapshot

@@ -1,9 +1,9 @@
-# Exchanges Matching Kernel
+# Order Matching Engine
 [![Go](https://github.com/Curton/GoMatchingKernel/actions/workflows/go.yml/badge.svg)](https://github.com/Curton/GoMatchingKernel/actions/workflows/go.yml)  
 
-- A simple exchanges matching kernel written in Go.  
+- A simple exchanges matching engine written in Go.  
 - A study project.  
-- The kernel acting the core of an Order Matching System.  
+- The kernel acting the core of an Order Matching Engine.  
 - The kernel is designed to efficiently match buy and sell orders in a financial exchanges.  
 
 ## Features
@@ -11,7 +11,7 @@
 * Multiple Order types: Supports different order types including Good-Till-Cancelled (GTC), Immediate-Or-Cancel (IOC), Fill-Or-Kill (FOK) and Post-Only-Order/Pending-Or-Cancelled (POC)
 * Concurrency: Handle multiple orders simultaneously.
 * Order cancellation: Orders can be cancelled as per the conditions defined.
-* Snapshot feature: The system can take a snapshot of the current state of the order book for recovery or analysis.
+* Snapshot feature: The engine can take a snapshot of the current state of the order book for recovery or analysis.
 * Simple WAL is used for data integrity
 
 ## TDDO
@@ -23,7 +23,7 @@
 ## Core Code Structure
 The main concepts and functionsare:
 
-* kernel: The core struct representing the order matching system.
+* kernel: The core struct representing the order matching engine.
 * matchedInfo: Represents information about matched orders.
 * priceBucket: Represents a price level in the order book.
 * takeSnapshot(): Takes a snapshot of the current state of the order book.
@@ -31,10 +31,10 @@ The main concepts and functionsare:
 * insertCheckedOrder(): Inserts an order into the order book after checking for validity.
 * clearBucket(): Clears a price level in the order book.
 * matchingOrder(): Matches incoming orders with the orders in the order book.
-* restoreKernel(): Restores an instance of the order matching system from a snapshot.
+* restoreKernel(): Restores an instance of the order matching engine from a snapshot.
 
 ## Usage
-This codebase is intended to be used as a library in a trading system. 
+This codebase is intended to be used as a library in a trading engine. 
 To use it, you would need to import it into your project and create a new instance of the kernel. 
 You can then use the methods provided by the kernel to interact with the order book.
 ```go
@@ -112,7 +112,7 @@ Used to accept and schedule orders.
 * Order Acceptance: The function accepts new orders, assigns an order ID, logs the order if enabled, and checks if the orders are limit or market orders.
 * Order Processing: Processes the orders based on their type - limit or market, and routes them to the appropriate matching function in the kernel.
 * Concurrent Processing: handle multiple orders simultaneously.
-* Redo Log: The acceptor can also process a redo log to recover the state of the kernel in case of a system failure.
+* Redo Log: The acceptor can also process a redo log to recover the state of the kernel in case of a engine failure.
 
 The main types and functions are:
 
@@ -149,16 +149,16 @@ The matchedInfo represents information about matched orders.
 
 ### redoKernel
 The `redoKernel` is an instance of the `kernel` type. It's used to process redo orders. 
-Redo orders are a type of order that the system has processed before but needs to process again, for fast recovery or error correction. 
+Redo orders are a type of order that the engine has processed before but needs to process again, for fast recovery or error correction. 
 Enabling the `redoKernel` will start the `RedoOrderAcceptor`, which reads and processes redo orders from the `redoOrderChan` channel.
 The main difference between the `kernel` and `redoKernel` is that the `redoKernel` only processes redo orders while the `kernel` processes new orders.  
 
 ### Orders log
-Orders log is a crucial part of any trading system, serving as a crucial tool for audit, debugging and in some cases, recovery.  
+Orders log is a crucial part of any trading engine, serving as a crucial tool for audit, debugging and in some cases, recovery.  
 
 Features:
 
-- Order Logging: The system logs all incoming orders with details including order ID, type, price, quantity, and more.
+- Order Logging: The engine logs all incoming orders with details including order ID, type, price, quantity, and more.
 - Binary Encoding: The orders are encoded into binary format before being written to the log file to save space and improve performance.
 - Log Reading: The logger can read orders from a log file and convert them back into orders.
 - Redo Log Reading: The logger can read redo logs and send them to a redo kernel for processing.
