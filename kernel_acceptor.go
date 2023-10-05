@@ -97,7 +97,7 @@ func (s *scheduler) orderAcceptor(kernel_flag ...int) {
 				paused = true
 			case order := <-orderChan:
 				// Add validation here
-				if (math.Abs(float64(order.Left)) > math.Abs(float64(order.Amount)) && (order.Amount != 0)) {
+				if math.Abs(float64(order.Left)) > math.Abs(float64(order.Amount)) && (order.Amount != 0) {
 					log.Println("Invalid order: Left exceeds Amount")
 					continue
 				}
