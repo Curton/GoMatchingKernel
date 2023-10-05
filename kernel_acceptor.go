@@ -7,7 +7,7 @@ package ker
 
 import (
 	"log"
-	_ "math"
+	"math"
 	"math/rand"
 	"os"
 	"time"
@@ -64,8 +64,6 @@ func (s *scheduler) orderAcceptor(kernel_flag ...int) {
 		if kernel_flag[0] == REDO_KERNEL {
 			orderChan = s.redoOrderChan
 			kernel = s.redoKernel
-			// s.redoKernelStatus = STARTED
-
 			// Dummy orderReceivedChan for redo kernel
 			orderReceivedChan = make(chan *types.KernelOrder, 100)
 			go func() {
@@ -94,10 +92,19 @@ func (s *scheduler) orderAcceptor(kernel_flag ...int) {
 			// kernel stop
 			case <-s.kernel.ctx.Done():
 				return
-			// kernel pause
+				// kernel pause
 			case <-kernel.pauseChan:
 				paused = true
 			case order := <-orderChan:
+				// Add validation here
+				if math.Abs(float64(order.Left)) > math.Abs(float64(order.Amount)) {
+					log.Println("Invalid order: Left exceeds Amount")
+					continue
+				}
+				if (order.Left < 0 && order.Amount > 0) || (order.Left > 0 && order.Amount < 0) {
+					log.Println("Invalid order: Left and Amount have different signs")
+					continue
+				}
 				kernelOrder := *order
 				kernelOrder.CreateTime = time.Now().UnixNano()
 				uint64R := uint64(s.r.Int63())
@@ -184,61 +191,6 @@ func (s *scheduler) orderAcceptor(kernel_flag ...int) {
 	}
 
 }
-
-// todo: reuse startOrderAcceptor
-// func (s *scheduler) startRedoOrderAcceptor() {
-// 	for recv := range s.redoOrderChan {
-// 		// cancel order
-// 		if recv.Amount == 0 {
-// 			recv.Status = types.CANCELLED
-// 			s.redoKernel.cancelOrder(recv)
-// 			continue
-// 		}
-
-// 		if recv.Type == types.LIMIT {
-// 			// limit order
-// 			if recv.Amount > 0 {
-// 				// bid order
-// 				if recv.Price < s.redoKernel.ask1Price {
-// 					// cannot match, insert immediatly
-// 					s.redoKernel.insertUnmatchedOrder(recv)
-// 				} else {
-// 					s.redoKernel.matchingOrder(s.redoKernel.ask, recv, false)
-// 				}
-// 			} else {
-// 				// ask order
-// 				if recv.Price > s.redoKernel.bid1Price {
-// 					// cannot match, insert immediatly
-// 					s.redoKernel.insertUnmatchedOrder(recv)
-// 				} else {
-// 					s.redoKernel.matchingOrder(s.redoKernel.bid, recv, true)
-// 				}
-// 			}
-// 		} else if recv.Type == types.MARKET {
-// 			// market price order
-// 			recv.TimeInForce = types.FOK
-// 			if recv.Amount > 0 {
-// 				// bid, buy
-// 				if s.redoKernel.ask1Price != math.MaxInt64 {
-// 					recv.Price = int64(float64(s.redoKernel.ask1Price) * marketPriceOffset)
-// 					s.redoKernel.matchingOrder(s.redoKernel.ask, recv, false)
-// 				} else {
-// 					recv.Price = 0
-// 					recv.Status = types.CANCELLED
-// 				}
-// 			} else {
-// 				// ask, sell
-// 				if s.redoKernel.bid1Price != math.MinInt64 {
-// 					recv.Price = int64(float64(s.redoKernel.ask1Price) * marketPriceOffset)
-// 					s.redoKernel.matchingOrder(s.redoKernel.bid, recv, true)
-// 				} else {
-// 					recv.Price = 0
-// 					recv.Status = types.CANCELLED
-// 				}
-// 			}
-// 		}
-// 	}
-// }
 
 func initAcceptor(serverId uint64, acceptorDescription string) *scheduler {
 	return &scheduler{

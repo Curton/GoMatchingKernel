@@ -7,7 +7,18 @@ type OrderType uint8
 type TimeInForce uint8
 
 const (
-	LIMIT OrderType = iota
+	/* 
+	A limit order is an order to buy or sell a security at a specific price or better.
+	A buy limit order can only be executed at the limit price or lower, and a sell limit order can only be executed at the limit price or higher. 
+	This gives the trader control over the price at which the trade is executed, but it does not guarantee that the order will be filled.
+	*/
+	LIMIT OrderType = iota 
+	/* 
+	A market order is an order to buy or sell a security at the best available price in the current market. 
+	It is widely used because it guarantees that the order will be executed, but it does not guarantee the execution price. 
+	A market order generally will execute at or near the current bid (for a sell order) or ask (for a buy order) price. 
+	However, it is possible for lack of depth in the order book, causing market orders to execute at a price that is significantly different from the current bid or ask price.
+	*/
 	MARKET
 )
 
