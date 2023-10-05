@@ -14,7 +14,7 @@
 * Snapshot feature: The engine can take a snapshot of the current state of the order book for recovery or analysis.
 * Redo `kernel` for fast recovery or error correction. 
 * Simple WAL is used for data integrity
-* 
+
 ## Usage
 This codebase is intended to be used as a library in a trading engine. 
 To use it, you would need to import it into your project and create a new instance of the kernel. 
