@@ -1,10 +1,10 @@
 # Order Matching Engine
 [![Go](https://github.com/Curton/GoMatchingKernel/actions/workflows/go.yml/badge.svg)](https://github.com/Curton/GoMatchingKernel/actions/workflows/go.yml)  
 
-- A simple exchanges matching engine written in Go.  
+- A simple order matching engine written in Go.  
 - A study project.  
-- The kernel acting the core of an Order Matching Engine.  
-- The kernel is designed to efficiently match buy and sell orders in a financial exchanges.  
+- `kernel` acting the core of an Order Matching Engine.  
+- `kernel` is designed to efficiently match buy and sell orders in a financial exchanges.  
 
 ## Features
 * Order matching: The kernel uses skiplist for both buy and sell orders to efficiently match orders based on price and quantity.
@@ -12,6 +12,7 @@
 * Concurrency: Handle multiple orders simultaneously.
 * Order cancellation: Orders can be cancelled as per the conditions defined.
 * Snapshot feature: The engine can take a snapshot of the current state of the order book for recovery or analysis.
+* Redo `kernel` for fast recovery or error correction. 
 * Simple WAL is used for data integrity
 
 ## TDDO
@@ -40,32 +41,16 @@ You can then use the methods provided by the kernel to interact with the order b
 ```go
 // insert orders
 // create bid order
-order := &types.KernelOrder{
-    KernelOrderID: 0,
-    CreateTime:    0,
-    UpdateTime:    0,
+bidOrder := &types.KernelOrder{
     Amount:        100,
     Price:         200,
     Left:          100,
-    FilledTotal:   0,
-    Status:        0,
-    Type:          0,
-    TimeInForce:   0,
-    Id:            0,
 }
 // create ask order, ask order represent in negative value
-order2 := &types.KernelOrder{
-    KernelOrderID: 1,
-    CreateTime:    0,
-    UpdateTime:    0,
+askOrder := &types.KernelOrder{
     Amount:        -100,
     Price:         201,
     Left:          -100,
-    FilledTotal:   0,
-    Status:        0,
-    Type:          0,
-    TimeInForce:   0,
-    Id:            0,
 }
 
 // init a new order acceptor with serverId and acceptorDescription
@@ -79,8 +64,8 @@ acceptor.kernel.startDummyMatchedInfoChan()
 
 // submit orders to acceptor
 go func() {
-    acceptor.newOrderChan <- order
-    acceptor.newOrderChan <- order2
+    acceptor.newOrderChan <- bidOrder
+    acceptor.newOrderChan <- askOrder
 }()
 
 // collect the details of received orders
