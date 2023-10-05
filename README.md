@@ -14,26 +14,7 @@
 * Snapshot feature: The engine can take a snapshot of the current state of the order book for recovery or analysis.
 * Redo `kernel` for fast recovery or error correction. 
 * Simple WAL is used for data integrity
-
-## TDDO
-- more test cases, many thanks to who can help us implement the TODO test cases
-- code coverage
-- monitoring
-- kernel data visualization
-
-## Core Code Structure
-The main concepts and functionsare:
-
-* kernel: The core struct representing the order matching engine.
-* matchedInfo: Represents information about matched orders.
-* priceBucket: Represents a price level in the order book.
-* takeSnapshot(): Takes a snapshot of the current state of the order book.
-* cancelOrder(): Cancels a given order.
-* insertCheckedOrder(): Inserts an order into the order book after checking for validity.
-* clearBucket(): Clears a price level in the order book.
-* matchingOrder(): Matches incoming orders with the orders in the order book.
-* restoreKernel(): Restores an instance of the order matching engine from a snapshot.
-
+* 
 ## Usage
 This codebase is intended to be used as a library in a trading engine. 
 To use it, you would need to import it into your project and create a new instance of the kernel. 
@@ -92,6 +73,26 @@ for i := range ids {
 
 // all other use cases are in the kernel_test.go
 ```
+
+## TDDO
+- more test cases, many thanks to who can help us implement the TODO test cases
+- code coverage
+- monitoring
+- kernel data visualization
+
+## Core Code Structure
+The main concepts and functionsare:
+
+* kernel: The core struct representing the order matching engine.
+* matchedInfo: Represents information about matched orders.
+* priceBucket: Represents a price level in the order book.
+* takeSnapshot(): Takes a snapshot of the current state of the order book.
+* cancelOrder(): Cancels a given order.
+* insertCheckedOrder(): Inserts an order into the order book after checking for validity.
+* clearBucket(): Clears a price level in the order book.
+* matchingOrder(): Matches incoming orders with the orders in the order book.
+* restoreKernel(): Restores an instance of the order matching engine from a snapshot.
+
 ### Acceptor
 Used to accept and schedule orders.
 * Order Acceptance: The function accepts new orders, assigns an order ID, logs the order if enabled, and checks if the orders are limit or market orders.
