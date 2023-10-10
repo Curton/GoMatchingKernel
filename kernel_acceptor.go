@@ -49,11 +49,11 @@ type internalRequestCode uint16
 
 // orderAcceptor should be run in a goroutine. It processes new orders and checks if they are limit or market orders.
 // classify limit orders and market orders
-func (s *scheduler) orderAcceptor(kernel_flag ...int) {
+func (s *scheduler) orderAcceptor(kernelFlag ...int) {
 
-	numArgs := len(kernel_flag)
+	numArgs := len(kernelFlag)
 	if numArgs > 1 {
-		panic("too many kernel_flag arguments")
+		panic("too many kernelFlag arguments")
 	}
 
 	var orderChan chan *types.KernelOrder
@@ -61,7 +61,7 @@ func (s *scheduler) orderAcceptor(kernel_flag ...int) {
 	var orderReceivedChan chan *types.KernelOrder
 
 	if numArgs == 1 {
-		if kernel_flag[0] == REDO_KERNEL {
+		if kernelFlag[0] == REDO_KERNEL {
 			orderChan = s.redoOrderChan
 			kernel = s.redoKernel
 			// Dummy orderReceivedChan for redo kernel
@@ -73,7 +73,7 @@ func (s *scheduler) orderAcceptor(kernel_flag ...int) {
 			}()
 
 		} else {
-			panic("Unknown kernel_flag")
+			panic("Unknown kernelFlag")
 		}
 
 	} else {
@@ -110,7 +110,7 @@ func (s *scheduler) orderAcceptor(kernel_flag ...int) {
 				uint64R := uint64(s.r.Int63())
 				kernelOrder.KernelOrderID = (uint64R >> (16 - 1)) | s.serverMask // use the first 16 bits as server Id
 
-				// write log if saveOrderLog is true and kernel_flag not set
+				// write log if saveOrderLog is true and kernelFlag not set
 				if saveOrderLog && numArgs == 0 {
 					if !writeOrderLog(s.f, s.acceptorDescription, order) {
 						log.Panicln("Error in writing order log.")

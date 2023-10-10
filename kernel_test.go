@@ -1244,7 +1244,7 @@ func Test_partialMatchWithMultipleBids(t *testing.T) {
 	<-acceptor.kernel.matchedInfoChan
 	<-acceptor.kernel.matchedInfoChan
 	assert.Equal(t, int64(198), acceptor.kernel.bid1Price)
-	assert.Equal(t, int64(math.MaxInt), acceptor.kernel.ask1Price)
+	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
 	// 200 * 300 + 201 * 200 + 202 * 50
 	assert.Equal(t, int64(200*-100+199*-200+198*-250), info.takerOrder.FilledTotal)
 }
