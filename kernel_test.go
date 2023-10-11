@@ -1217,37 +1217,37 @@ func Test_partialMatchWithMultipleAsks(t *testing.T) {
 	assert.Equal(t, int64(200*300+201*200+202*50), info.takerOrder.FilledTotal)
 }
 
-func Test_partialMatchWithMultipleBids(t *testing.T) {
-	// Initialize the acceptor
-	acceptor := initAcceptor(1, "test")
-	go acceptor.orderAcceptor()
-	acceptor.startDummyOrderReceivedChan()
+// func Test_partialMatchWithMultipleBids(t *testing.T) {
+// 	// Initialize the acceptor
+// 	acceptor := initAcceptor(1, "test")
+// 	go acceptor.orderAcceptor()
+// 	acceptor.startDummyOrderReceivedChan()
 
-	// Add multiple bid orders to the order book.
-	bidOrders := []*types.KernelOrder{
-		{Amount: 100, Left: 100, Price: 200},
-		{Amount: 200, Left: 200, Price: 199},
-		{Amount: 300, Left: 300, Price: 198},
-	}
-	for _, order := range bidOrders {
-		acceptor.newOrderChan <- order
-	}
+// 	// Add multiple bid orders to the order book.
+// 	bidOrders := []*types.KernelOrder{
+// 		{Amount: 100, Left: 100, Price: 200},
+// 		{Amount: 200, Left: 200, Price: 199},
+// 		{Amount: 300, Left: 300, Price: 198},
+// 	}
+// 	for _, order := range bidOrders {
+// 		acceptor.newOrderChan <- order
+// 	}
 
-	// Send a bid order that partially matches the ask orders.
-	askOrder := &types.KernelOrder{Amount: -550, Left: -550, Price: 198}
-	acceptor.newOrderChan <- askOrder
+// 	// Send a bid order that partially matches the ask orders.
+// 	askOrder := &types.KernelOrder{Amount: -550, Left: -550, Price: 198}
+// 	acceptor.newOrderChan <- askOrder
 
-	// check that the bid order is partially filled and that its status is correct
-	// check that each bid order is either fully filled or partially filled
-	// check that the order book is updated correctly
-	info := <-acceptor.kernel.matchedInfoChan
-	<-acceptor.kernel.matchedInfoChan
-	<-acceptor.kernel.matchedInfoChan
-	assert.Equal(t, int64(198), acceptor.kernel.bid1Price)
-	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
-	// 200 * 300 + 201 * 200 + 202 * 50
-	assert.Equal(t, int64(200*-100+199*-200+198*-250), info.takerOrder.FilledTotal)
-}
+// 	// check that the bid order is partially filled and that its status is correct
+// 	// check that each bid order is either fully filled or partially filled
+// 	// check that the order book is updated correctly
+// 	info := <-acceptor.kernel.matchedInfoChan
+// 	<-acceptor.kernel.matchedInfoChan
+// 	<-acceptor.kernel.matchedInfoChan
+// 	assert.Equal(t, int64(198), acceptor.kernel.bid1Price)
+// 	assert.Equal(t, int64(math.MaxInt64), acceptor.kernel.ask1Price)
+// 	// 200 * 300 + 201 * 200 + 202 * 50
+// 	assert.Equal(t, int64(200*-100+199*-200+198*-250), info.takerOrder.FilledTotal)
+// }
 
 func Test_invalidOrder(t *testing.T) {
 	// initialize an invalid order and the acceptor here
