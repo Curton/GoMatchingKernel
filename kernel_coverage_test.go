@@ -326,6 +326,25 @@ func Test_matchingOrder_FOK_CancelledInsufficientLiquidity(t *testing.T) {
 	assert.Equal(t, types.CANCELLED, info.takerOrder.Status)
 }
 
+func Test_matchingOrder_FOK_CancelledInsufficientLiquidity_BidSide(t *testing.T) {
+	acceptor := newTestAcceptor()
+	acceptor.startDummyOrderReceivedChan()
+
+	ask := newTestAskOrder(200, 50)
+	ask.Left = ask.Amount
+	acceptor.newOrderChan <- ask
+
+	time.Sleep(10 * time.Millisecond)
+
+	bid := newTestBidOrder(200, 100)
+	bid.TimeInForce = types.FOK
+	bid.Left = bid.Amount
+	acceptor.newOrderChan <- bid
+
+	info := <-acceptor.kernel.matchedInfoChan
+	assert.Equal(t, types.CANCELLED, info.takerOrder.Status)
+}
+
 func Test_matchingOrder_IOC_CancelledInsufficientLiquidity(t *testing.T) {
 	acceptor := newTestAcceptor()
 	acceptor.startDummyOrderReceivedChan()

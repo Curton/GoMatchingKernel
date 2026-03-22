@@ -329,7 +329,7 @@ func (k *kernel) matchingOrder(targetSide *SkipList, takerOrder *types.KernelOrd
 			priceMatchedLeft += bucket.Left
 		}
 		// not enough orders left
-		if (isAsk && takerOrder.Left < priceMatchedLeft) || (!isAsk && takerOrder.Left > priceMatchedLeft) {
+		if (isAsk && takerOrder.Left < priceMatchedLeft) || (!isAsk && takerOrder.Left > -priceMatchedLeft) {
 			// cancel all
 			takerOrder.UpdateTime = time.Now().UnixNano()
 			takerOrder.Status = types.CANCELLED
