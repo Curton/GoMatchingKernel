@@ -11,16 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var benchList *SkipList
-
 func init() {
-	// Initialize a big SkipList for the Get() benchmark
-	benchList = NewSkipList()
-
-	for i := 0; i <= 10000000; i++ {
-		benchList.Set(float64(i), [1]byte{})
-	}
-
 	// Display the sizes of our basic structs
 	var sl SkipList
 	var el Element
@@ -225,8 +216,14 @@ func BenchmarkIncSet(b *testing.B) {
 
 func BenchmarkIncGet(b *testing.B) {
 	b.ReportAllocs()
+	list := NewSkipList()
 	for i := 0; i < b.N; i++ {
-		res := benchList.Get(float64(i))
+		list.Set(float64(i), [1]byte{})
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		res := list.Get(float64(i))
 		if res == nil {
 			b.Fatal("failed to Get an element that should exist")
 		}
@@ -248,8 +245,14 @@ func BenchmarkDecSet(b *testing.B) {
 
 func BenchmarkDecGet(b *testing.B) {
 	b.ReportAllocs()
+	list := NewSkipList()
 	for i := b.N; i > 0; i-- {
-		res := benchList.Get(float64(i))
+		list.Set(float64(i), [1]byte{})
+	}
+
+	b.ResetTimer()
+	for i := b.N; i > 0; i-- {
+		res := list.Get(float64(i))
 		if res == nil {
 			b.Fatal("failed to Get an element that should exist", i)
 		}
