@@ -77,10 +77,8 @@ func (list *SkipList) Get(key float64) *Element {
 
 // Remove deletes an element from the list.
 // Returns removed element pointer if found, nil if not found.
-// Locking is optimistic and happens only after searching with a fast check on adjacent nodes after locking.
+// This method is NOT thread-safe and should be called only when the list is not being accessed by other goroutines.
 func (list *SkipList) Remove(key float64) *Element {
-	//list.mutex.Lock()
-	//defer list.mutex.Unlock()
 	prevs := list.getPrevElementNodes(key)
 
 	// found the element, remove it
