@@ -126,10 +126,19 @@ func (k *kernel) takeSnapshot(description string, lastKernelOrder *types.KernelO
 			order := pb.l.Front().Value.(*types.KernelOrder)
 			price := order.Price
 			path := bidBasePath + strconv.FormatInt(price, 10) + ".list"
-			f, _ := os.OpenFile(path, os.O_EXCL|os.O_CREATE|os.O_WRONLY, 0644)
+			f, err := os.OpenFile(path, os.O_EXCL|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				panic(err.Error())
+			}
 			bytes := kernelOrderListToBytes(pb.l)
-			_, _ = f.Write(bytes)
-			_ = f.Close()
+			_, err = f.Write(bytes)
+			if err != nil {
+				panic(err.Error())
+			}
+			err = f.Close()
+			if err != nil {
+				panic(err.Error())
+			}
 		}
 	}()
 
