@@ -935,3 +935,161 @@ func Test_kernelOrderListToBytes_ErrorPath(t *testing.T) {
 	assert.NotNil(t, bytes)
 	assert.Greater(t, len(bytes), 0)
 }
+
+func Test_cancelOrder_BucketRemainsWithOrders_AskSide(t *testing.T) {
+	acceptor := newTestAcceptor()
+	acceptor.kernel.startDummyMatchedInfoChan()
+
+	ask1 := newTestAskOrder(300, 50)
+	ask2 := newTestAskOrder(400, 30)
+	ask1.Left = ask1.Amount
+	ask2.Left = ask2.Amount
+
+	acceptor.kernel.insertUnmatchedOrder(ask1)
+	acceptor.kernel.insertUnmatchedOrder(ask2)
+
+	assert.Equal(t, 2, acceptor.kernel.ask.Length)
+	assert.Equal(t, int64(300), acceptor.kernel.ask1Price)
+
+	cancelAsk := &types.KernelOrder{
+		KernelOrderID: ask1.KernelOrderID,
+		Price:         ask1.Price,
+		Amount:        ask1.Amount,
+		Left:          ask1.Left,
+	}
+	acceptor.kernel.cancelOrder(cancelAsk)
+
+	time.Sleep(10 * time.Millisecond)
+	assert.Equal(t, 1, acceptor.kernel.ask.Length)
+	assert.Equal(t, int64(400), acceptor.kernel.ask1Price)
+
+	bucket := acceptor.kernel.ask.Front().Value().(*priceBucket)
+	assert.Equal(t, int64(-30), bucket.Left)
+	assert.Equal(t, 1, bucket.l.Len())
+}
+
+func Test_cancelOrder_BucketRemainsWithOrders_BidSide(t *testing.T) {
+	acceptor := newTestAcceptor()
+	acceptor.kernel.startDummyMatchedInfoChan()
+
+	bid1 := newTestBidOrder(200, 100)
+	bid2 := newTestBidOrder(100, 50)
+	bid1.Left = bid1.Amount
+	bid2.Left = bid2.Amount
+
+	acceptor.kernel.insertUnmatchedOrder(bid1)
+	acceptor.kernel.insertUnmatchedOrder(bid2)
+
+	assert.Equal(t, 2, acceptor.kernel.bid.Length)
+	assert.Equal(t, int64(200), acceptor.kernel.bid1Price)
+
+	cancelBid := &types.KernelOrder{
+		KernelOrderID: bid1.KernelOrderID,
+		Price:         bid1.Price,
+		Amount:        bid1.Amount,
+		Left:          bid1.Left,
+	}
+	acceptor.kernel.cancelOrder(cancelBid)
+
+	time.Sleep(10 * time.Millisecond)
+	assert.Equal(t, 1, acceptor.kernel.bid.Length)
+	assert.Equal(t, int64(100), acceptor.kernel.bid1Price)
+
+	bucket := acceptor.kernel.bid.Front().Value().(*priceBucket)
+	assert.Equal(t, int64(50), bucket.Left)
+	assert.Equal(t, 1, bucket.l.Len())
+}
+
+func Test_restoreKernel_OnlyAskSide(t *testing.T) {
+	acceptor := newTestAcceptor()
+	acceptor.startDummyOrderReceivedChan()
+	acceptor.kernel.startDummyMatchedInfoChan()
+
+	ask1 := newTestAskOrder(300, 50)
+	ask2 := newTestAskOrder(400, 75)
+
+	acceptor.newOrderChan <- ask1
+	acceptor.newOrderChan <- ask2
+
+	time.Sleep(20 * time.Millisecond)
+
+	lastOrder := newTestBidOrder(250, 75)
+	acceptor.kernel.takeSnapshot("test_restore_ask_only", lastOrder)
+
+	time.Sleep(20 * time.Millisecond)
+
+	snapshotPath := "./orderbook_snapshot/test_restore_ask_only/"
+	entries, err := os.ReadDir(snapshotPath)
+	assert.NoError(t, err)
+
+	latestSnapshot := ""
+	var latestTime int64 = 0
+	for _, entry := range entries {
+		if entry.IsDir() {
+			timeInt, err := strconv.ParseInt(entry.Name(), 10, 64)
+			if err == nil && timeInt > latestTime {
+				latestTime = timeInt
+				latestSnapshot = entry.Name()
+			}
+		}
+	}
+
+	assert.NotEmpty(t, latestSnapshot)
+
+	restorePath := snapshotPath + latestSnapshot + "/"
+	restoredKernel, ok := restoreKernel(restorePath)
+	assert.True(t, ok)
+	assert.NotNil(t, restoredKernel)
+
+	assert.Equal(t, 2, restoredKernel.ask.Length)
+	assert.Equal(t, 0, restoredKernel.bid.Length)
+	assert.Equal(t, int64(300), restoredKernel.ask1Price)
+	assert.Equal(t, int64(math.MinInt64), restoredKernel.bid1Price)
+}
+
+func Test_restoreKernel_OnlyBidSide(t *testing.T) {
+	acceptor := newTestAcceptor()
+	acceptor.startDummyOrderReceivedChan()
+	acceptor.kernel.startDummyMatchedInfoChan()
+
+	bid1 := newTestBidOrder(200, 100)
+	bid2 := newTestBidOrder(150, 80)
+
+	acceptor.newOrderChan <- bid1
+	acceptor.newOrderChan <- bid2
+
+	time.Sleep(20 * time.Millisecond)
+
+	lastOrder := newTestBidOrder(250, 75)
+	acceptor.kernel.takeSnapshot("test_restore_bid_only", lastOrder)
+
+	time.Sleep(20 * time.Millisecond)
+
+	snapshotPath := "./orderbook_snapshot/test_restore_bid_only/"
+	entries, err := os.ReadDir(snapshotPath)
+	assert.NoError(t, err)
+
+	latestSnapshot := ""
+	var latestTime int64 = 0
+	for _, entry := range entries {
+		if entry.IsDir() {
+			timeInt, err := strconv.ParseInt(entry.Name(), 10, 64)
+			if err == nil && timeInt > latestTime {
+				latestTime = timeInt
+				latestSnapshot = entry.Name()
+			}
+		}
+	}
+
+	assert.NotEmpty(t, latestSnapshot)
+
+	restorePath := snapshotPath + latestSnapshot + "/"
+	restoredKernel, ok := restoreKernel(restorePath)
+	assert.True(t, ok)
+	assert.NotNil(t, restoredKernel)
+
+	assert.Equal(t, 0, restoredKernel.ask.Length)
+	assert.Equal(t, 2, restoredKernel.bid.Length)
+	assert.Equal(t, int64(math.MaxInt64), restoredKernel.ask1Price)
+	assert.Equal(t, int64(200), restoredKernel.bid1Price)
+}
