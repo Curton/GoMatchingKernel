@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 	"unsafe"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var benchList *SkipList
@@ -110,6 +112,31 @@ func TestBasicIntCRUD(t *testing.T) {
 	if v6 != nil {
 		t.Fatal(`found value for key "0", which should have been deleted`)
 	}
+}
+
+func TestElementKeyValue(t *testing.T) {
+	list := NewSkipList()
+	list.Set(10, "testvalue")
+	e := list.Get(10)
+	assert.NotNil(t, e)
+	assert.Equal(t, float64(10), e.Key())
+	assert.Equal(t, "testvalue", e.Value())
+}
+
+func TestElementNext(t *testing.T) {
+	list := NewSkipList()
+	list.Set(10, 1)
+	list.Set(20, 2)
+	list.Set(30, 3)
+	e := list.Get(10)
+	assert.NotNil(t, e)
+	e20 := e.Next()
+	assert.NotNil(t, e20)
+	assert.Equal(t, float64(20), e20.Key())
+	e30 := e20.Next()
+	assert.NotNil(t, e30)
+	assert.Equal(t, float64(30), e30.Key())
+	assert.Nil(t, e30.Next())
 }
 
 func TestChangeLevel(t *testing.T) {
