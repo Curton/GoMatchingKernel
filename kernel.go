@@ -152,15 +152,18 @@ func (k *kernel) cancelOrder(order *types.KernelOrder) {
 				break
 			}
 		}
-		// remove bucket if empty
 		if bucket.Left == 0 {
 			k.ask.Remove(float64(order.Price))
 		}
-		// reset ask1Price
 		if k.ask.Length == 0 {
+			k.ask1PriceMux.Lock()
 			k.ask1Price = math.MaxInt64
+			k.ask1PriceMux.Unlock()
 		} else {
-			k.ask1Price = k.ask.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
+			newPrice := k.ask.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
+			k.ask1PriceMux.Lock()
+			k.ask1Price = newPrice
+			k.ask1PriceMux.Unlock()
 		}
 		return
 	}
@@ -176,15 +179,18 @@ func (k *kernel) cancelOrder(order *types.KernelOrder) {
 				break
 			}
 		}
-		// remove bucket if empty
 		if bucket.Left == 0 {
 			k.bid.Remove(float64(-order.Price))
 		}
-		// reset bid1Price
 		if k.bid.Length == 0 {
+			k.bid1PriceMux.Lock()
 			k.bid1Price = math.MinInt64
+			k.bid1PriceMux.Unlock()
 		} else {
-			k.bid1Price = k.bid.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
+			newPrice := k.bid.Front().value.(*priceBucket).l.Front().Value.(*types.KernelOrder).Price
+			k.bid1PriceMux.Lock()
+			k.bid1Price = newPrice
+			k.bid1PriceMux.Unlock()
 		}
 		return
 	}
@@ -492,7 +498,7 @@ func restoreKernel(path string) (*kernel, bool) {
 			}
 			ker.ask.Set(float64(price), &priceBucket{
 				l:    l,
-				Left: 0,
+				Left: left,
 			})
 		}()
 
@@ -521,7 +527,7 @@ func restoreKernel(path string) (*kernel, bool) {
 			}
 			ker.bid.Set(float64(-price), &priceBucket{
 				l:    l,
-				Left: 0,
+				Left: left,
 			})
 		}()
 	}

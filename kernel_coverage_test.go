@@ -218,12 +218,13 @@ func Test_kernel_PauseAndResume(t *testing.T) {
 	bid2.Left = bid2.Amount
 	acceptor.newOrderChan <- bid2
 
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
+	assert.Equal(t, 1, acceptor.kernel.bid.Length)
 
 	acceptor.kernel.Resume()
 
-	time.Sleep(50 * time.Millisecond)
-	assert.GreaterOrEqual(t, 2, acceptor.kernel.bid.Length)
+	time.Sleep(20 * time.Millisecond)
+	assert.Equal(t, 2, acceptor.kernel.bid.Length)
 }
 
 func Test_kernel_InsertUnmatchedOrder_UpdateBestPrices(t *testing.T) {
@@ -443,6 +444,59 @@ func Test_restoreKernel_BothSidesWithMultiplePriceLevels(t *testing.T) {
 
 	assert.Equal(t, 2, restoredKernel.ask.Length)
 	assert.Equal(t, 2, restoredKernel.bid.Length)
+}
+
+func Test_restoreKernel_LeftValueRestored(t *testing.T) {
+	acceptor := newTestAcceptor()
+	acceptor.startDummyOrderReceivedChan()
+	acceptor.kernel.startDummyMatchedInfoChan()
+
+	ask1 := newTestAskOrder(300, 50)
+	ask2 := newTestAskOrder(300, 30)
+	bid1 := newTestBidOrder(200, 100)
+
+	acceptor.newOrderChan <- ask1
+	acceptor.newOrderChan <- ask2
+	acceptor.newOrderChan <- bid1
+
+	time.Sleep(20 * time.Millisecond)
+
+	lastOrder := newTestBidOrder(250, 75)
+	acceptor.kernel.takeSnapshot("test_restore_left", lastOrder)
+
+	time.Sleep(20 * time.Millisecond)
+
+	snapshotPath := "./orderbook_snapshot/test_restore_left/"
+	entries, err := os.ReadDir(snapshotPath)
+	assert.NoError(t, err)
+
+	latestSnapshot := ""
+	var latestTime int64 = 0
+	for _, entry := range entries {
+		if entry.IsDir() {
+			timeInt, err := strconv.ParseInt(entry.Name(), 10, 64)
+			if err == nil && timeInt > latestTime {
+				latestTime = timeInt
+				latestSnapshot = entry.Name()
+			}
+		}
+	}
+
+	assert.NotEmpty(t, latestSnapshot)
+
+	restorePath := snapshotPath + latestSnapshot + "/"
+	restoredKernel, ok := restoreKernel(restorePath)
+	assert.True(t, ok)
+	assert.NotNil(t, restoredKernel)
+
+	assert.Equal(t, 1, restoredKernel.ask.Length)
+	assert.Equal(t, 1, restoredKernel.bid.Length)
+
+	askBucket := restoredKernel.ask.Front().Value().(*priceBucket)
+	assert.Equal(t, int64(-80), askBucket.Left)
+
+	bidBucket := restoredKernel.bid.Front().Value().(*priceBucket)
+	assert.Equal(t, int64(100), bidBucket.Left)
 }
 
 func Test_writeOrderLog_NewFileCreation(t *testing.T) {
