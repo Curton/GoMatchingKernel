@@ -1,6 +1,8 @@
 package ker
 
 import (
+	"maps"
+
 	"github.com/Curton/GoMatchingKernel/types"
 )
 
@@ -23,8 +25,8 @@ type OrderBookSnapshot struct {
 
 // MatchResult holds the result of a matching event.
 type MatchResult struct {
-	TakerOrder    types.KernelOrder
-	MakerOrders   []types.KernelOrder
+	TakerOrder     types.KernelOrder
+	MakerOrders    []types.KernelOrder
 	MatchedSizeMap map[uint64]int64
 }
 
@@ -57,9 +59,7 @@ func (e *MatchingEngine) Start() {
 			makerOrders := make([]types.KernelOrder, len(mi.makerOrders))
 			copy(makerOrders, mi.makerOrders)
 			sizeMap := make(map[uint64]int64, len(mi.matchedSizeMap))
-			for k, v := range mi.matchedSizeMap {
-				sizeMap[k] = v
-			}
+			maps.Copy(sizeMap, mi.matchedSizeMap)
 			e.matchResultCh <- MatchResult{
 				TakerOrder:     mi.takerOrder,
 				MakerOrders:    makerOrders,
