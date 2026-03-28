@@ -222,21 +222,10 @@ func (k *kernel) insertUnmatchedOrder(order *types.KernelOrder) bool {
 				l:    l,
 				Left: order.Left,
 			})
-			// DCL, this can be removed while all method call are synchronised
 			if k.ask1Price == math.MaxInt64 {
-				k.ask1PriceMux.Lock()
-				if k.ask1Price == math.MaxInt64 {
-					k.ask1Price = order.Price
-				} else if k.ask1Price > order.Price {
-					k.ask1Price = order.Price
-				}
-				k.ask1PriceMux.Unlock()
+				k.ask1Price = order.Price
 			} else if k.ask1Price > order.Price {
-				k.ask1PriceMux.Lock()
-				if k.ask1Price > order.Price {
-					k.ask1Price = order.Price
-				}
-				k.ask1PriceMux.Unlock()
+				k.ask1Price = order.Price
 			}
 			return true
 		}
@@ -254,21 +243,10 @@ func (k *kernel) insertUnmatchedOrder(order *types.KernelOrder) bool {
 				l:    l,
 				Left: order.Left,
 			})
-			// DCL, this can be removed while all method call are synchronised
 			if k.bid1Price == math.MinInt64 {
-				k.bid1PriceMux.Lock()
-				if k.bid1Price == math.MinInt64 {
-					k.bid1Price = order.Price
-				} else if k.bid1Price < order.Price {
-					k.bid1Price = order.Price
-				}
-				k.bid1PriceMux.Unlock()
+				k.bid1Price = order.Price
 			} else if k.bid1Price < order.Price {
-				k.bid1PriceMux.Lock()
-				if k.bid1Price < order.Price {
-					k.bid1Price = order.Price
-				}
-				k.bid1PriceMux.Unlock()
+				k.bid1Price = order.Price
 			}
 			return true
 		}
