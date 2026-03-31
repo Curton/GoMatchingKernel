@@ -555,10 +555,12 @@ func Test_restoreKernel_LeftValueRestored(t *testing.T) {
 }
 
 func Test_writeOrderLog_NewFileCreation(t *testing.T) {
-	tmpDir := "./kernelorder_log_test_tmp/"
-	os.MkdirAll(tmpDir, 0755)
+	tmpDir, err := os.MkdirTemp("", "kernelorder_log_test_tmp_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 	originalPath := kernelOrderLogPath
-	kernelOrderLogPath = tmpDir
+	kernelOrderLogPath = tmpDir + "/"
 	defer func() {
 		kernelOrderLogPath = originalPath
 		os.RemoveAll(tmpDir)
@@ -584,12 +586,15 @@ func Test_writeOrderLog_NewFileCreation(t *testing.T) {
 }
 
 func Test_writeOrderLog_MkdirAllError(t *testing.T) {
-	tmpDir := "./kernelorder_log_test_tmp/"
-	os.MkdirAll(tmpDir, 0755)
+	tmpDir, err := os.MkdirTemp("", "kernelorder_log_test_tmp_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 	originalPath := kernelOrderLogPath
-	kernelOrderLogPath = tmpDir
+	kernelOrderLogPath = tmpDir + "/"
 	defer func() {
 		kernelOrderLogPath = originalPath
+		os.Chmod(tmpDir, 0755)
 		os.RemoveAll(tmpDir)
 	}()
 
@@ -615,12 +620,15 @@ func Test_writeOrderLog_MkdirAllError(t *testing.T) {
 }
 
 func Test_writeOrderLog_WriteError(t *testing.T) {
-	tmpDir := "./kernelorder_log_test_tmp_write_err/"
-	os.MkdirAll(tmpDir, 0755)
+	tmpDir, err := os.MkdirTemp("", "kernelorder_log_test_tmp_write_err_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 	originalPath := kernelOrderLogPath
-	kernelOrderLogPath = tmpDir
+	kernelOrderLogPath = tmpDir + "/"
 	defer func() {
 		kernelOrderLogPath = originalPath
+		os.Chmod(tmpDir, 0755)
 		os.RemoveAll(tmpDir)
 	}()
 
@@ -894,10 +902,12 @@ func Test_cancelOrder_NotFound(t *testing.T) {
 }
 
 func Test_orderLogReader_FileReadError(t *testing.T) {
-	tmpDir := "./kernelorder_log_test_tmp/"
-	os.MkdirAll(tmpDir, 0755)
+	tmpDir, err := os.MkdirTemp("", "kernelorder_log_test_tmp_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 	originalPath := kernelOrderLogPath
-	kernelOrderLogPath = tmpDir
+	kernelOrderLogPath = tmpDir + "/"
 	defer func() {
 		kernelOrderLogPath = originalPath
 		os.RemoveAll(tmpDir)
@@ -930,23 +940,25 @@ func Test_orderAcceptor_InternalRequestChan(t *testing.T) {
 }
 
 func Test_restoreKernel_BidDirReadError(t *testing.T) {
-	tmpDir := "./kernelorder_log_test_tmp_restore_bid_err/"
-	os.MkdirAll(tmpDir, 0755)
+	tmpDir, err := os.MkdirTemp("", "kernelorder_log_test_tmp_restore_bid_err_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 	defer func() {
-		os.Chmod(tmpDir+"bid/", 0755)
+		os.Chmod(tmpDir+"/bid/", 0755)
 		os.RemoveAll(tmpDir)
 	}()
 
-	askPath := tmpDir + "ask/"
-	bidPath := tmpDir + "bid/"
+	askPath := tmpDir + "/ask/"
+	bidPath := tmpDir + "/bid/"
 	os.MkdirAll(askPath, 0755)
 	os.MkdirAll(bidPath, 0755)
 	os.Chmod(bidPath, 0000)
 
-	f, _ := os.Create(tmpDir + "finished.log")
+	f, _ := os.Create(tmpDir + "/finished.log")
 	f.Close()
 
-	ker, ok := restoreKernel(tmpDir)
+	ker, ok := restoreKernel(tmpDir + "/")
 	assert.Nil(t, ker)
 	assert.False(t, ok)
 }
