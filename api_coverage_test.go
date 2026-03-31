@@ -55,18 +55,16 @@ func Test_MatchingEngine_SubmitBidOrder(t *testing.T) {
 	engine := NewMatchingEngine(1, "test_bid")
 	engine.Start()
 
-	time.Sleep(10 * time.Millisecond)
-
 	bid := newTestBidOrder(200, 100)
 	bid.Left = bid.Amount
 	engine.SubmitOrder(bid)
 
-	time.Sleep(10 * time.Millisecond)
-
-	assert.Equal(t, int64(math.MaxInt64), engine.BestAsk())
-	assert.Equal(t, 0, engine.AskLength())
-	assert.Equal(t, int64(200), engine.BestBid())
-	assert.Equal(t, 1, engine.BidLength())
+	assert.Eventually(t, func() bool {
+		return engine.BestBid() == 200 &&
+			engine.BidLength() == 1 &&
+			engine.BestAsk() == math.MaxInt64 &&
+			engine.AskLength() == 0
+	}, time.Second, 10*time.Millisecond)
 
 	engine.Stop()
 }
