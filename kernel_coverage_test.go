@@ -7,6 +7,8 @@ package ker
 
 import (
 	"container/list"
+	"io"
+	"log"
 	"math"
 	"os"
 	"strconv"
@@ -586,6 +588,8 @@ func Test_writeOrderLog_NewFileCreation(t *testing.T) {
 }
 
 func Test_writeOrderLog_MkdirAllError(t *testing.T) {
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(os.Stderr)
 	tmpDir, err := os.MkdirTemp("", "kernelorder_log_test_tmp_*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -620,6 +624,8 @@ func Test_writeOrderLog_MkdirAllError(t *testing.T) {
 }
 
 func Test_writeOrderLog_WriteError(t *testing.T) {
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(os.Stderr)
 	tmpDir, err := os.MkdirTemp("", "kernelorder_log_test_tmp_write_err_*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -1398,6 +1404,8 @@ func Test_orderAcceptor_UnsupportedOrderType(t *testing.T) {
 }
 
 func Test_orderAcceptor_WriteOrderLogFailure(t *testing.T) {
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(os.Stderr)
 	tmpDir := "/dev/null/impossible_path/"
 	originalPath := kernelOrderLogPath
 	kernelOrderLogPath = tmpDir
@@ -1495,6 +1503,8 @@ func Test_orderAcceptor_PausedThenStop(t *testing.T) {
 // --- order_logger error paths ---
 
 func Test_writeOrderLog_MkdirAllError_Direct(t *testing.T) {
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(os.Stderr)
 	originalPath := kernelOrderLogPath
 	kernelOrderLogPath = "/dev/null/cannot_create_subdir/"
 	defer func() { kernelOrderLogPath = originalPath }()
